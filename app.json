@@ -1,24 +1,30 @@
 {
   "expo": {
-    "name": "login-app",
-    "slug": "login-app",
+    "name": "AI Literacy",
+    "slug": "ai-literacy",
+    "scheme": "ailiteracy",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ailiteracy.app"
     },
     "android": {
+      "package": "com.ailiteracy.app",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#1A253A",
+        "foregroundImage": "./assets/logo.png"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/logo.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-web-browser"
+    ]
   }
 }
