@@ -212,7 +212,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
     <View style={styles.container}>
       <StatusBar style="dark" translucent />
       <ImageBackground
-        source={require('../assets/characterStageRockBg.webp')}
+        source={require('../assets/characterStageRockBg.jpg')}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
