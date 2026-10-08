@@ -27,7 +27,12 @@ export function getGeminiApiKey() {
  * 1. Generate in-character spoken dialogue and optimized art prompt using Gemini 3.1
  */
 async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
+  const modelsToTry = [
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-3.1-flash-lite',
+  ];
 
   const systemInstruction =
     "You are the AI Literacy Character Creator assistant. " +
@@ -39,35 +44,47 @@ async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
     "Output JSON format:\n" +
     '{"characterName": "...", "talkBubble": "...", "imagePrompt": "..."}';
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: `Create character dialogue and image prompt for: "${userPrompt}"` }],
-        },
-      ],
-      systemInstruction: {
-        parts: [{ text: systemInstruction }],
-      },
-      generationConfig: {
-        temperature: 0.8,
-        responseMimeType: 'application/json',
-      },
-    }),
-  });
+  let lastError = null;
+  for (const model of modelsToTry) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: `Create character dialogue and image prompt for: "${userPrompt}"` }],
+            },
+          ],
+          systemInstruction: {
+            parts: [{ text: systemInstruction }],
+          },
+          generationConfig: {
+            temperature: 0.8,
+            responseMimeType: 'application/json',
+          },
+        }),
+      });
 
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini Text Error (${res.status}): ${errText}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        lastError = new Error(`Gemini Text Error (${res.status}): ${errText}`);
+        continue;
+      }
+
+      const data = await res.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawText) {
+        return JSON.parse(rawText);
+      }
+    } catch (err) {
+      lastError = err;
+    }
   }
 
-  const data = await res.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) throw new Error('No response generated from Gemini 3.1');
-  return JSON.parse(rawText);
+  throw lastError || new Error('No response generated from Gemini API');
 }
 
 /**
