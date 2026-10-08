@@ -15,8 +15,26 @@ import { StatusBar } from 'expo-status-bar';
 import Svg, { Path } from 'react-native-svg';
 
 const INK = '#1B2A4A';
+const TITLE_INK = '#0A1C3E';
+const SUBTITLE_COLOR = '#556882';
 
-export default function UserNameScreen({ initialName = '', onContinue, onBack }) {
+function SparkleIcon({ size = 18, color = '#DE9E36' }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M12 2C12 7.52 16.48 12 22 12C16.48 12 12 16.48 12 22C12 16.48 7.52 12 2 12C7.52 12 12 7.52 12 2Z"
+        fill={color}
+      />
+    </Svg>
+  );
+}
+
+export default function UserNameScreen({
+  initialName = '',
+  placeholder = 'Your story name',
+  onContinue,
+  onBack,
+}) {
   const [userName, setUserName] = useState(initialName);
   const { width, height } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -48,6 +66,18 @@ export default function UserNameScreen({ initialName = '', onContinue, onBack })
   const inputLeft = width * 0.40;
   const inputRight = 24;
 
+  // Header text block positioned in upper cream expanse
+  const headerTop = height * 0.28;
+  const titleFontSize = Math.min(width * 0.096, 38);
+  const subtitleFontSize = Math.min(width * 0.04, 15.5);
+
+  const serifFont = Platform.select({
+    ios: 'Georgia',
+    android: 'serif',
+    web: 'Georgia, "Playfair Display", "Times New Roman", serif',
+    default: 'serif',
+  });
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" translucent />
@@ -75,6 +105,34 @@ export default function UserNameScreen({ initialName = '', onContinue, onBack })
             </TouchableOpacity>
           )}
 
+          {/* Heading and Subtitle in the cream scroll area */}
+          <Animated.View
+            style={[
+              styles.headerWrapper,
+              {
+                top: headerTop,
+                opacity: fadeAnim,
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.titleText,
+                {
+                  fontSize: titleFontSize,
+                  fontFamily: serifFont,
+                  lineHeight: titleFontSize * 1.14,
+                },
+              ]}
+            >
+              {'What should\nwe call you?'}
+            </Text>
+            <Text style={[styles.subtitleText, { fontSize: subtitleFontSize }]}>
+              Pick a story name. Keep your real name private.
+            </Text>
+          </Animated.View>
+
           {/* Input field in the center-right where the fox is pointing */}
           <Animated.View
             style={[
@@ -91,8 +149,8 @@ export default function UserNameScreen({ initialName = '', onContinue, onBack })
             <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
-                placeholder="Type a User name"
-                placeholderTextColor="#8A9BB3"
+                placeholder={placeholder}
+                placeholderTextColor="#94A3B8"
                 value={userName}
                 onChangeText={setUserName}
                 autoCapitalize="words"
@@ -100,7 +158,7 @@ export default function UserNameScreen({ initialName = '', onContinue, onBack })
                 returnKeyType="done"
                 onSubmitEditing={handleContinue}
               />
-              {userName.trim().length > 0 && (
+              {userName.trim().length > 0 ? (
                 <TouchableOpacity
                   style={styles.submitButton}
                   onPress={handleContinue}
@@ -116,6 +174,10 @@ export default function UserNameScreen({ initialName = '', onContinue, onBack })
                     />
                   </Svg>
                 </TouchableOpacity>
+              ) : (
+                <View style={styles.sparkleContainer}>
+                  <SparkleIcon size={18} color="#DE9E36" />
+                </View>
               )}
             </View>
           </Animated.View>
@@ -150,13 +212,34 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     zIndex: 30,
   },
+  headerWrapper: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  titleText: {
+    fontWeight: '700',
+    color: TITLE_INK,
+    textAlign: 'center',
+    letterSpacing: -0.4,
+  },
+  subtitleText: {
+    fontFamily: 'Inter_500Medium',
+    color: SUBTITLE_COLOR,
+    textAlign: 'center',
+    marginTop: 10,
+    paddingHorizontal: 12,
+    letterSpacing: -0.15,
+  },
   inputWrapper: {
     position: 'absolute',
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -184,5 +267,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginLeft: 6,
+  },
+  sparkleContainer: {
+    width: 24,
+    height: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 4,
   },
 });
