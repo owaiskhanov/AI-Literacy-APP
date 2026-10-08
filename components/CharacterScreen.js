@@ -183,6 +183,9 @@ export default function CharacterScreen({ onBack, onComplete }) {
       } else if (result.imageError) {
         Alert.alert('Image Generation Notice', `Generated character story & dialogue! Note: ${result.imageError}`);
       }
+      if (result.imageUrl || result.talkBubble) {
+        setPrompt('');
+      }
     } catch (err) {
       Alert.alert('Generation Error', err.message || 'Unable to generate character. Please check your Gemini API key.');
     } finally {
@@ -200,13 +203,13 @@ export default function CharacterScreen({ onBack, onComplete }) {
   const serifFont = Platform.select({
     ios: 'Georgia',
     android: 'serif',
-    web: 'Georgia, "Playfair Display", "Times New Roman", serif',
+    web: '"Playfair Display", "Fraunces", Georgia, "Times New Roman", serif',
     default: 'serif',
   });
 
-  const titleFontSize = Math.min(width * 0.096, 38);
+  const titleFontSize = Math.min(width * 0.076, 29);
   const characterSize = Math.min(width * 0.96, 400);
-  const characterBottom = height * 0.22;
+  const characterBottom = height * 0.22 - 5;
 
   return (
     <View style={styles.container}>
@@ -260,7 +263,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
                   {
                     fontSize: titleFontSize,
                     fontFamily: serifFont,
-                    lineHeight: titleFontSize * 1.12,
+                    lineHeight: titleFontSize * 1.15,
                   },
                 ]}
               >
@@ -348,13 +351,13 @@ export default function CharacterScreen({ onBack, onComplete }) {
             )}
           </Animated.View>
 
-          {/* Bottom AI Input Section (Refined UI) */}
+          {/* Bottom AI Input Section (Refined UI with disabled state during generation) */}
           <Animated.View style={[styles.inputSection, { opacity: fadeAnim }]}>
-            <View style={styles.inputCard}>
+            <View style={[styles.inputCard, loading && styles.inputCardDisabled]}>
               <TextInput
-                style={styles.textInput}
-                placeholder="A playful fox with crystal wings..."
-                placeholderTextColor="#8C9CAE"
+                style={[styles.textInput, loading && styles.textInputDisabled]}
+                placeholder={loading ? 'Summoning your character... ✨' : 'A playful fox with crystal wings...'}
+                placeholderTextColor={loading ? '#4A90E2' : '#8C9CAE'}
                 value={prompt}
                 onChangeText={setPrompt}
                 returnKeyType="send"
@@ -362,7 +365,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
                 editable={!loading}
               />
               <TouchableOpacity
-                style={styles.aiButton}
+                style={[styles.aiButton, loading && styles.aiButtonDisabled]}
                 onPress={handleGenerate}
                 disabled={loading}
                 activeOpacity={0.75}
@@ -505,9 +508,9 @@ const styles = StyleSheet.create({
   },
   titleText: {
     fontWeight: '700',
-    color: INK,
+    color: '#0E2347',
     textAlign: 'center',
-    letterSpacing: -0.4,
+    letterSpacing: -0.3,
   },
   characterStage: {
     position: 'absolute',
@@ -620,6 +623,11 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'rgba(215, 195, 170, 0.45)',
   },
+  inputCardDisabled: {
+    backgroundColor: 'rgba(246, 243, 235, 0.92)',
+    borderColor: 'rgba(74, 144, 226, 0.45)',
+    opacity: 0.82,
+  },
   textInput: {
     flex: 1,
     fontFamily: 'Inter_500Medium',
@@ -628,10 +636,16 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     paddingRight: 8,
   },
+  textInputDisabled: {
+    color: '#8A9BB3',
+  },
   aiButton: {
     padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  aiButtonDisabled: {
+    opacity: 0.75,
   },
   dualSparklesContainer: {
     flexDirection: 'row',
