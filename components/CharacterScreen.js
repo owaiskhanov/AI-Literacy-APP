@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  ScrollView,
   ImageBackground,
   Image,
   KeyboardAvoidingView,
@@ -22,6 +23,15 @@ import {
   getGeminiApiKey,
   setGeminiApiKey,
 } from '../services/geminiService';
+
+const SUGGESTION_TAGS = [
+  { label: '✨ Mythical', keyword: 'mythical' },
+  { label: '🌑 Dark', keyword: 'dark' },
+  { label: '💎 Obsidian', keyword: 'obsidian' },
+  { label: '🌟 Celestial', keyword: 'celestial' },
+  { label: '🪽 Crystal Wings', keyword: 'crystal wings' },
+  { label: '🐾 Moon Spirit', keyword: 'moon spirit' },
+];
 
 const INK = '#0A1C3E';
 const SUBTITLE_COLOR = '#475569';
@@ -203,6 +213,25 @@ export default function CharacterScreen({ onBack, onComplete }) {
     Alert.alert('Gemini Connected!', 'Your Gemini API key is configured. You can now generate characters!');
   };
 
+  const handleToggleTag = (keyword) => {
+    if (loading) return;
+    setPrompt((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) {
+        return keyword;
+      }
+      const parts = trimmed.split(',').map((p) => p.trim()).filter(Boolean);
+      const lowerKeyword = keyword.toLowerCase();
+      const existingIdx = parts.findIndex((p) => p.toLowerCase() === lowerKeyword);
+      if (existingIdx !== -1) {
+        parts.splice(existingIdx, 1);
+        return parts.join(', ');
+      } else {
+        return `${trimmed}, ${keyword}`;
+      }
+    });
+  };
+
   const handleGenerate = async () => {
     const userText = prompt.trim();
     if (!userText) {
@@ -272,7 +301,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
 
   const titleFontSize = Math.min(width * 0.076, 29);
   const characterSize = Math.min(width * 0.96, 400);
-  const characterBottom = height * 0.17 - 5;
+  const characterBottom = height * 0.19 - 5;
 
   return (
     <View style={styles.container}>
@@ -418,8 +447,41 @@ export default function CharacterScreen({ onBack, onComplete }) {
             )}
           </Animated.View>
 
-          {/* Bottom AI Input Section (Refined UI with disabled state during generation) */}
+          {/* Bottom AI Input Section with Suggestion Tags */}
           <Animated.View style={[styles.inputSection, { opacity: fadeAnim }]}>
+            {/* Quick Suggestion Tags */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestionTagsRow}
+              style={styles.suggestionScrollView}
+            >
+              {SUGGESTION_TAGS.map((tag, idx) => {
+                const isSelected = prompt.toLowerCase().includes(tag.keyword.toLowerCase());
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[
+                      styles.suggestionTag,
+                      isSelected && styles.suggestionTagSelected,
+                    ]}
+                    onPress={() => handleToggleTag(tag.keyword)}
+                    activeOpacity={0.7}
+                    disabled={loading}
+                  >
+                    <Text
+                      style={[
+                        styles.suggestionTagText,
+                        isSelected && styles.suggestionTagTextSelected,
+                      ]}
+                    >
+                      {tag.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+
             <View style={[styles.inputCard, loading && styles.inputCardDisabled]}>
               <TextInput
                 style={[styles.textInput, loading && styles.textInputDisabled]}
@@ -669,10 +731,48 @@ const styles = StyleSheet.create({
   },
   inputSection: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 24,
     left: 18,
     right: 18,
     zIndex: 30,
+  },
+  suggestionScrollView: {
+    marginBottom: 8,
+    maxHeight: 34,
+  },
+  suggestionTagsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 2,
+    gap: 7,
+  },
+  suggestionTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 254, 250, 0.92)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(215, 195, 170, 0.65)',
+    shadowColor: '#1B2A4A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  suggestionTagSelected: {
+    backgroundColor: '#1B2A4A',
+    borderColor: '#DE9E36',
+  },
+  suggestionTagText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1B2A4A',
+    letterSpacing: 0.2,
+  },
+  suggestionTagTextSelected: {
+    color: '#FFFFFF',
   },
   inputCard: {
     flexDirection: 'row',
