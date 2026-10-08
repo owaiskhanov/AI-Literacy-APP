@@ -42,7 +42,8 @@ async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
     "MANDATORY CREATIVE DIRECTIVES:\n" +
     "1. STYLE: Always 3D Pixar / DreamWorks animated movie style character render. High-end 3D CGI, smooth subsurface scattering, tactile stylized finish, adorable expressive face.\n" +
     "2. MYTHICAL TOUCH: Always make the character slightly mythical and enchanted, regardless of what was requested (even for common animals). Infuse subtle magical traits: celestial stardust, glowing mystical markings, tiny iridescent fairy/dragon wings, enchanted crystal horns, or glowing gemstone eyes.\n" +
-    "3. BACKGROUND: Strict NO BACKGROUND isolated asset. Pure solid white (#FFFFFF) background cutout sticker with absolutely NO floor, NO ground shadows, NO scenery, NO borders.\n\n" +
+    "3. BACKGROUND: Strict NO BACKGROUND isolated asset. Pure solid white (#FFFFFF) background cutout sticker with absolutely NO floor, NO ground shadows, NO scenery, NO borders.\n" +
+    "4. POSE & GROUNDING (ALWAYS STANDING): Mandatory full-body standing or perched pose with feet, paws, or talons planted firmly flat at the bottom base of the frame, full body completely visible from head to toe. The character must stand upright so it plants firmly on a stone pedestal. Never floating in mid-air, never flying without ground contact, never lying down, and never cropped at the waist, knees, or neck.\n\n" +
     "Output strictly valid JSON format:\n" +
     '{"characterName": "...", "talkBubble": "...", "imagePrompt": "..."}';
 
@@ -99,6 +100,11 @@ async function generateCharacterImage(imagePrompt, apiKey) {
     'gemini-3-pro-image',
   ];
 
+  // Guarantee standing pose and isolated solid white background in final image prompt
+  const enhancedPrompt = imagePrompt.toLowerCase().includes('standing')
+    ? imagePrompt
+    : `Full body standing pose, feet firmly planted at bottom of frame, full figure head to toe, upright posture. ${imagePrompt}. Isolated sticker on solid pure white #FFFFFF background.`;
+
   let lastErr = null;
   for (const model of imageModels) {
     try {
@@ -110,7 +116,7 @@ async function generateCharacterImage(imagePrompt, apiKey) {
           contents: [
             {
               role: 'user',
-              parts: [{ text: imagePrompt }],
+              parts: [{ text: enhancedPrompt }],
             },
           ],
           generationConfig: {

@@ -205,8 +205,8 @@ export default function CharacterScreen({ onBack, onComplete }) {
   });
 
   const titleFontSize = Math.min(width * 0.096, 38);
-  const characterSize = Math.min(width * 0.88, 390);
-  const characterBottom = height * 0.25;
+  const characterSize = Math.min(width * 0.96, 400);
+  const characterBottom = height * 0.22;
 
   return (
     <View style={styles.container}>
@@ -726,14 +726,14 @@ const styles = StyleSheet.create({
   },
   characterBackdropAura: {
     position: 'absolute',
-    width: 320,
-    height: 320,
-    borderRadius: 160,
-    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    width: 400,
+    height: 400,
+    borderRadius: 200,
+    backgroundColor: 'rgba(255, 255, 255, 0.58)',
     shadowColor: '#FFF8DC',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 32,
+    shadowOpacity: 0.9,
+    shadowRadius: 36,
     elevation: 8,
     zIndex: -1,
   },
@@ -741,20 +741,20 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
     zIndex: 10,
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.35,
-    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.38,
+    shadowRadius: 20,
   },
   groundShadow: {
-    width: 190,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(10, 28, 62, 0.42)',
-    marginTop: -10,
+    width: 250,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(10, 28, 62, 0.5)',
+    marginTop: -16,
     shadowColor: '#0A1C3E',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
     zIndex: 5,
     transform: [{ scaleY: 0.65 }],
   },
