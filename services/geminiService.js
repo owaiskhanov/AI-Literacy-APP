@@ -1,125 +1,174 @@
-// Gemini 3.1 AI Service for Character Generation & Talk Bubble Interaction
-const FALLBACK_PROFILES = {
-  fox: {
-    name: 'Captain Rusty',
-    type: 'fox',
-    quotes: [
-      "The ocean breeze is calling! Let's hoist the sails and find hidden treasure! 🌊⚓",
-      "My compass always points toward brave new adventures! Are you ready? 🧭✨",
-      "Look at that golden sunset over the castle waves! Let's explore the tide pools!",
-      "With a trusty map and a curious heart, no storm can stop us! ⛵🦊",
-    ],
-  },
-  owl: {
-    name: 'Professor Hoot',
-    type: 'owl',
-    quotes: [
-      "Hoo-hoo! Every starry night holds secrets waiting to be uncovered in ancient books! 📖✨",
-      "Put on your explorer glasses—wisdom is the greatest superpower in the realm! 👓🦉",
-      "I've read tales of the floating castle islands... shall we decipher their riddle together?",
-      "Curiosity is the key that unlocks every enchanted door in the kingdom!",
-    ],
-  },
-  dragon: {
-    name: 'Sparky the Emerald',
-    type: 'dragon',
-    quotes: [
-      "I found a glimmering sunstone in the sea caves! Wanna see it glow? 💎🔥",
-      "My wings are tiny, but my courage can soar higher than the tallest castle turret! 🐉✨",
-      "Warm sea breeze, sunny rocks, and good friends—today is a magical day to fly!",
-      "Roar! That's dragon for 'I'm super excited to be your story companion!' 💚",
-    ],
-  },
-};
+// Gemini 3.1 AI Service for Dynamic Character & Dialogue Generation
 
-/**
- * Determine character type from prompt text
- */
-function inferCharacterType(prompt) {
-  const p = prompt.toLowerCase();
-  if (p.includes('owl') || p.includes('bird') || p.includes('wise') || p.includes('book') || p.includes('glass')) {
-    return 'owl';
+// Storage key for custom user API key in localStorage / memory
+let inMemoryApiKey = process.env.EXPO_PUBLIC_GEMINI_API_KEY || null;
+
+export function setGeminiApiKey(key) {
+  inMemoryApiKey = key ? key.trim() : null;
+  if (typeof window !== 'undefined' && window.localStorage) {
+    if (inMemoryApiKey) {
+      window.localStorage.setItem('GEMINI_API_KEY', inMemoryApiKey);
+    } else {
+      window.localStorage.removeItem('GEMINI_API_KEY');
+    }
   }
-  if (p.includes('dragon') || p.includes('scale') || p.includes('fire') || p.includes('wing') || p.includes('lizard')) {
-    return 'dragon';
+}
+
+export function getGeminiApiKey() {
+  if (inMemoryApiKey) return inMemoryApiKey;
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = window.localStorage.getItem('GEMINI_API_KEY');
+    if (saved) return saved;
   }
-  return 'fox';
+  return process.env.EXPO_PUBLIC_GEMINI_API_KEY || null;
 }
 
 /**
- * Call Gemini 3.1 (or fallback) to generate in-character talk bubble and metadata
+ * 1. Generate in-character spoken dialogue and optimized art prompt using Gemini 3.1
  */
-export async function generateCharacterWithGemini(userPrompt, apiKey = null) {
-  const activeKey = apiKey || process.env.EXPO_PUBLIC_GEMINI_API_KEY || null;
+async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${apiKey}`;
 
-  if (activeKey) {
-    try {
-      // Using Gemini 3.1 Flash-Lite for fast, responsive character dialogue
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${activeKey}`;
-      
-      const systemInstruction = 
-        "You are an imaginative character creation AI for a magical children's storytelling app called 'AI Literacy'. " +
-        "When given a character description prompt, generate a lively in-character response that appears in the character's speech bubble. " +
-        "Output strictly valid JSON with this format:\n" +
-        "{\n" +
-        '  "characterName": "Name of character",\n' +
-        '  "talkBubble": "Short (1-2 sentences) enthusiastic in-character spoken dialogue addressed to the child",\n' +
-        '  "characterType": "fox" | "owl" | "dragon",\n' +
-        '  "visualSummary": "One sentence summary of their appearance"\n' +
-        "}";
+  const systemInstruction =
+    "You are the AI Literacy Character Creator assistant. " +
+    "A child or storyteller gives you a prompt describing a storybook character. " +
+    "You must return strictly valid JSON with:\n" +
+    "1. talkBubble: A delightful, warm, 1-2 sentence in-character spoken dialogue from this character to the child.\n" +
+    "2. characterName: An imaginative, charming name for the character.\n" +
+    "3. imagePrompt: A detailed image generation prompt requesting an adorable fairytale watercolor children's book illustration of the character, isolated on a pure clean white background, full body standing character sticker style with clean edges, no text inside the image.\n\n" +
+    "Output JSON format:\n" +
+    '{"characterName": "...", "talkBubble": "...", "imagePrompt": "..."}';
 
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: `Create character and speech bubble for prompt: "${userPrompt}"` }],
-            },
-          ],
-          systemInstruction: {
-            parts: [{ text: systemInstruction }],
-          },
-          generationConfig: {
-            temperature: 0.8,
-            maxOutputTokens: 300,
-            responseMimeType: 'application/json',
-          },
-        }),
-      });
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: `Create character dialogue and image prompt for: "${userPrompt}"` }],
+        },
+      ],
+      systemInstruction: {
+        parts: [{ text: systemInstruction }],
+      },
+      generationConfig: {
+        temperature: 0.8,
+        responseMimeType: 'application/json',
+      },
+    }),
+  });
 
-      if (res.ok) {
-        const data = await res.json();
-        const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawText) {
-          const parsed = JSON.parse(rawText);
-          return {
-            characterName: parsed.characterName || 'Adventurer',
-            talkBubble: parsed.talkBubble,
-            characterType: ['fox', 'owl', 'dragon'].includes(parsed.characterType) ? parsed.characterType : inferCharacterType(userPrompt),
-            visualSummary: parsed.visualSummary || userPrompt,
-            isAiGenerated: true,
-          };
-        }
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini Text Error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!rawText) throw new Error('No response generated from Gemini 3.1');
+  return JSON.parse(rawText);
+}
+
+/**
+ * 2. Generate the character image using Gemini Image generation (Imagen 3 / Gemini Flash Image)
+ */
+async function generateCharacterImage(imagePrompt, apiKey) {
+  // Method A: Try Imagen 3 Predict API
+  try {
+    const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
+    const res = await fetch(imagenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt: imagePrompt }],
+        parameters: { sampleCount: 1, aspectRatio: '1:1' },
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
+      const mime = data?.predictions?.[0]?.mimeType || 'image/png';
+      if (b64) {
+        return `data:${mime};base64,${b64}`;
       }
-    } catch (err) {
-      console.warn('Gemini 3.1 call fallback:', err.message);
+    }
+  } catch (err) {
+    console.warn('Imagen 3 attempt failed, trying Gemini 3.1 Flash Image:', err.message);
+  }
+
+  // Method B: Try Gemini 3.1 Flash Image generateContent API
+  const geminiImageUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
+  const res = await fetch(geminiImageUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: imagePrompt }],
+        },
+      ],
+      generationConfig: {
+        responseModalities: ['IMAGE'],
+      },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Image Generation Error (${res.status}): ${errText}`);
+  }
+
+  const data = await res.json();
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts || [];
+  for (const part of parts) {
+    if (part.inlineData) {
+      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
     }
   }
 
-  // Fallback simulator with intelligent matching & simulated delay for natural feel
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  throw new Error('Image data was not returned in Gemini response');
+}
 
-  const type = inferCharacterType(userPrompt);
-  const profile = FALLBACK_PROFILES[type];
-  const randomQuote = profile.quotes[Math.floor(Math.random() * profile.quotes.length)];
+/**
+ * Main export: Generate complete character (image + dialogue) with Gemini AI
+ */
+export async function generateCharacterWithGemini(userPrompt, customApiKey = null) {
+  const activeKey = customApiKey || getGeminiApiKey();
+
+  if (!activeKey) {
+    return {
+      needsApiKey: true,
+      message: 'Please provide your Google Gemini API Key to generate real-time AI characters.',
+    };
+  }
+
+  // 1. Generate personality & dialogue
+  const textResult = await generateCharacterTextAndPrompt(userPrompt, activeKey);
+
+  // 2. Generate isolated character illustration
+  let imageUrl = null;
+  try {
+    imageUrl = await generateCharacterImage(textResult.imagePrompt, activeKey);
+  } catch (imageErr) {
+    console.warn('Image generation error, returning dialogue:', imageErr.message);
+    return {
+      success: true,
+      characterName: textResult.characterName,
+      talkBubble: textResult.talkBubble,
+      imageError: imageErr.message,
+      imagePrompt: textResult.imagePrompt,
+    };
+  }
 
   return {
-    characterName: profile.name,
-    talkBubble: randomQuote,
-    characterType: type,
-    visualSummary: userPrompt,
-    isAiGenerated: false,
+    success: true,
+    characterName: textResult.characterName,
+    talkBubble: textResult.talkBubble,
+    imageUrl: imageUrl,
+    imagePrompt: textResult.imagePrompt,
   };
 }

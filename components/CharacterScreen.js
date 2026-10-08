@@ -11,23 +11,22 @@ import {
   Platform,
   Animated,
   ActivityIndicator,
+  Modal,
+  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Path } from 'react-native-svg';
-import { generateCharacterWithGemini } from '../services/geminiService';
+import {
+  generateCharacterWithGemini,
+  getGeminiApiKey,
+  setGeminiApiKey,
+} from '../services/geminiService';
 
-const INK = '#1B2A4A';
-const TITLE_INK = '#0A1C3E';
+const INK = '#0A1C3E';
 const SUBTITLE_COLOR = '#475569';
 
-const CHARACTER_ASSETS = {
-  fox: require('../assets/characters/fox.png'),
-  owl: require('../assets/characters/owl.png'),
-  dragon: require('../assets/characters/dragon.png'),
-};
-
-function StarSparkle({ size = 16, color = '#E6A838' }) {
+function StarSparkle({ size = 16, color = '#DE9E36' }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
@@ -38,21 +37,23 @@ function StarSparkle({ size = 16, color = '#E6A838' }) {
   );
 }
 
-function DualSparkles({ color = '#4A90E2' }) {
+function DualSparkles({ color = '#4A90E2', secondaryColor = '#DE9E36' }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-      <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <View style={styles.dualSparklesContainer}>
+      <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
         <Path
           d="M12 2C12 7.52 16.48 12 22 12C16.48 12 12 16.48 12 22C12 16.48 7.52 12 2 12C7.52 12 12 7.52 12 2Z"
           fill={color}
         />
       </Svg>
-      <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" style={{ marginTop: -8, marginLeft: -4 }}>
-        <Path
-          d="M12 2C12 7.52 16.48 12 22 12C16.48 12 12 16.48 12 22C12 16.48 7.52 12 2 12C7.52 12 12 7.52 12 2Z"
-          fill="#E6A838"
-        />
-      </Svg>
+      <View style={styles.smallSparkleOffset}>
+        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M12 2C12 7.52 16.48 12 22 12C16.48 12 12 16.48 12 22C12 16.48 7.52 12 2 12C7.52 12 12 7.52 12 2Z"
+            fill={secondaryColor}
+          />
+        </Svg>
+      </View>
     </View>
   );
 }
@@ -61,25 +62,41 @@ export default function CharacterScreen({ onBack, onComplete }) {
   const { width, height } = useWindowDimensions();
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
-  const [characterType, setCharacterType] = useState('fox');
+  const [loadingStep, setLoadingStep] = useState('');
+  
+  // Dynamic AI Generated State (no hardcoded characters)
+  const [characterImageUri, setCharacterImageUri] = useState(null);
+  const [characterName, setCharacterName] = useState('');
   const [talkBubble, setTalkBubble] = useState(
     'Add what they look like\nand what makes them\nspecial!'
   );
+
+  // Gemini API Key Modal
+  const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [hasApiKey, setHasApiKey] = useState(false);
 
   // Animations
   const floatAnim = useRef(new Animated.Value(0)).current;
   const bubbleScale = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const pulseAnim = useRef(new Animated.Value(0.7)).current;
 
   useEffect(() => {
-    // Screen entrance
+    // Check initial API key
+    const existingKey = getGeminiApiKey();
+    if (existingKey) {
+      setHasApiKey(true);
+      setApiKeyInput(existingKey);
+    }
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start();
 
-    // Gentle character breathing / idle float
+    // Subtle idle floating
     Animated.loop(
       Animated.sequence([
         Animated.timing(floatAnim, {
@@ -94,28 +111,83 @@ export default function CharacterScreen({ onBack, onComplete }) {
         }),
       ])
     ).start();
+
+    // Summoning aura pulse
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0.6,
+          duration: 1200,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
 
+  const handleSaveApiKey = () => {
+    if (!apiKeyInput.trim()) {
+      Alert.alert('Empty Key', 'Please enter your Google Gemini API Key.');
+      return;
+    }
+    setGeminiApiKey(apiKeyInput.trim());
+    setHasApiKey(true);
+    setApiKeyModalVisible(false);
+    Alert.alert('Gemini Connected!', 'Your Gemini API key is configured. You can now generate characters!');
+  };
+
   const handleGenerate = async () => {
-    const userText = prompt.trim() || 'A brave fox who loves the ocean';
+    const userText = prompt.trim();
+    if (!userText) {
+      Alert.alert('Prompt Needed', 'Please describe your character (e.g. "A brave fox who loves the ocean")');
+      return;
+    }
+
+    const activeKey = getGeminiApiKey();
+    if (!activeKey) {
+      setApiKeyModalVisible(true);
+      return;
+    }
+
     setLoading(true);
+    setLoadingStep('Crafting character voice & story...');
 
     // Pop bubble down slightly during thinking
     Animated.timing(bubbleScale, {
-      toValue: 0.92,
+      toValue: 0.9,
       duration: 150,
       useNativeDriver: true,
     }).start();
 
     try {
-      const result = await generateCharacterWithGemini(userText);
-      setCharacterType(result.characterType);
-      setTalkBubble(result.talkBubble || 'Adventure awaits! ✨');
+      const result = await generateCharacterWithGemini(userText, activeKey);
+
+      if (result.needsApiKey) {
+        setApiKeyModalVisible(true);
+        return;
+      }
+
+      if (result.talkBubble) {
+        setTalkBubble(result.talkBubble);
+      }
+      if (result.characterName) {
+        setCharacterName(result.characterName);
+      }
+
+      if (result.imageUrl) {
+        setCharacterImageUri(result.imageUrl);
+      } else if (result.imageError) {
+        Alert.alert('Image Generation Notice', `Generated character story & dialogue! Note: ${result.imageError}`);
+      }
     } catch (err) {
-      setTalkBubble("The salty breeze is whispering! Let's explore the seas! 🌊");
+      Alert.alert('Generation Error', err.message || 'Unable to generate character. Please check your Gemini API key.');
     } finally {
       setLoading(false);
-      // Pop bubble back in joyfully
+      setLoadingStep('');
       Animated.spring(bubbleScale, {
         toValue: 1,
         friction: 5,
@@ -132,11 +204,8 @@ export default function CharacterScreen({ onBack, onComplete }) {
     default: 'serif',
   });
 
-  const titleFontSize = Math.min(width * 0.098, 38);
-  const characterImageSource = CHARACTER_ASSETS[characterType] || CHARACTER_ASSETS.fox;
-
-  // Viewport character size
-  const characterSize = Math.min(width * 0.72, 340);
+  const titleFontSize = Math.min(width * 0.096, 38);
+  const characterSize = Math.min(width * 0.74, 340);
   const characterBottom = height * 0.16;
 
   return (
@@ -151,20 +220,33 @@ export default function CharacterScreen({ onBack, onComplete }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardContainer}
         >
-          {/* Back Navigation Button */}
-          {onBack && (
-            <TouchableOpacity style={styles.backButton} onPress={onBack} activeOpacity={0.7}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M15 18l-6-6 6-6"
-                  stroke="#FFFFFF"
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
+          {/* Top Bar: Back Button & API Key Settings */}
+          <View style={styles.topBar}>
+            {onBack ? (
+              <TouchableOpacity style={styles.iconButton} onPress={onBack} activeOpacity={0.7}>
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M15 18l-6-6 6-6"
+                    stroke="#FFFFFF"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+              </TouchableOpacity>
+            ) : <View style={{ width: 40 }} />}
+
+            {/* Gemini API Key Indicator & Trigger */}
+            <TouchableOpacity
+              style={[styles.apiKeyPill, hasApiKey ? styles.apiKeyPillActive : null]}
+              onPress={() => setApiKeyModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.apiKeyPillText}>
+                {hasApiKey ? '✨ Gemini Connected' : '🔑 Set Gemini Key'}
+              </Text>
             </TouchableOpacity>
-          )}
+          </View>
 
           {/* Heading with Fairytale Star Sparkles */}
           <Animated.View style={[styles.headerContainer, { opacity: fadeAnim }]}>
@@ -190,7 +272,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
             </View>
           </Animated.View>
 
-          {/* Character Viewport (standing on rocks without background frame) */}
+          {/* Character Viewport Stage (no background frame, transparent on rocks) */}
           <Animated.View
             style={[
               styles.characterStage,
@@ -210,25 +292,52 @@ export default function CharacterScreen({ onBack, onComplete }) {
             >
               <View style={styles.speechBubbleCard}>
                 <Text style={styles.speechBubbleText}>
-                  {loading ? 'Thinking up a magical response with Gemini 3.1... ✨' : talkBubble}
+                  {loading
+                    ? (loadingStep || 'Summoning your character with Gemini 3.1... ✨')
+                    : talkBubble}
                 </Text>
+                {characterName ? (
+                  <Text style={styles.characterBadge}>— {characterName}</Text>
+                ) : null}
               </View>
               {/* Pointer Tail towards character */}
               <View style={styles.speechBubbleTail} />
             </Animated.View>
 
-            {/* Transparent Character Cutout */}
-            <Image
-              source={characterImageSource}
-              style={{
-                width: characterSize,
-                height: characterSize,
-                resizeMode: 'contain',
-              }}
-            />
+            {/* Character Render: Dynamic AI Generated or Inviting Magic Summoning Aura */}
+            {characterImageUri ? (
+              <Image
+                source={{ uri: characterImageUri }}
+                style={{
+                  width: characterSize,
+                  height: characterSize,
+                  resizeMode: 'contain',
+                }}
+              />
+            ) : (
+              <Animated.View
+                style={[
+                  styles.summoningPlaceholder,
+                  {
+                    width: characterSize,
+                    height: characterSize,
+                    opacity: pulseAnim,
+                  },
+                ]}
+              >
+                <View style={styles.auraRingOuter}>
+                  <View style={styles.auraRingInner}>
+                    <DualSparkles color="#4A90E2" secondaryColor="#DE9E36" />
+                    <Text style={styles.summoningText}>
+                      Describe your character below{'\n'}to generate them with Gemini!
+                    </Text>
+                  </View>
+                </View>
+              </Animated.View>
+            )}
           </Animated.View>
 
-          {/* Bottom AI Input Box */}
+          {/* Bottom AI Input Section (Refined UI) */}
           <Animated.View style={[styles.inputSection, { opacity: fadeAnim }]}>
             <View style={styles.inputCard}>
               <TextInput
@@ -250,11 +359,55 @@ export default function CharacterScreen({ onBack, onComplete }) {
                 {loading ? (
                   <ActivityIndicator size="small" color="#4A90E2" />
                 ) : (
-                  <DualSparkles color="#4A90E2" />
+                  <DualSparkles color="#4A90E2" secondaryColor="#DE9E36" />
                 )}
               </TouchableOpacity>
             </View>
           </Animated.View>
+
+          {/* Gemini API Key Modal */}
+          <Modal
+            visible={apiKeyModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setApiKeyModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalCard}>
+                <View style={styles.modalHeaderIcon}>
+                  <Text style={{ fontSize: 28 }}>✨</Text>
+                </View>
+                <Text style={styles.modalTitle}>Connect Google Gemini</Text>
+                <Text style={styles.modalSubtitle}>
+                  Enter your Google Gemini API Key to enable real-time character image & voice generation.
+                </Text>
+
+                <TextInput
+                  style={styles.modalInput}
+                  placeholder="Paste your Gemini API key (AIza...)"
+                  placeholderTextColor="#94A3B8"
+                  value={apiKeyInput}
+                  onChangeText={setApiKeyInput}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  secureTextEntry={false}
+                />
+
+                <TouchableOpacity style={styles.modalSaveButton} onPress={handleSaveApiKey} activeOpacity={0.8}>
+                  <Text style={styles.modalSaveButtonText}>Save & Connect Gemini</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.modalCloseButton}
+                  onPress={() => setApiKeyModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
         </KeyboardAvoidingView>
       </ImageBackground>
     </View>
@@ -274,21 +427,51 @@ const styles = StyleSheet.create({
   keyboardContainer: {
     flex: 1,
   },
-  backButton: {
+  topBar: {
     position: 'absolute',
     top: 50,
-    left: 20,
+    left: 18,
+    right: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 40,
+  },
+  iconButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+  },
+  apiKeyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  apiKeyPillActive: {
+    backgroundColor: 'rgba(16, 185, 129, 0.85)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+  },
+  apiKeyPillText: {
+    color: '#FFFFFF',
+    fontSize: 11.5,
+    fontWeight: '600',
+    letterSpacing: 0.2,
   },
   headerContainer: {
     position: 'absolute',
-    top: '8%',
+    top: '11%',
     left: 20,
     right: 20,
     alignItems: 'center',
@@ -306,12 +489,12 @@ const styles = StyleSheet.create({
   },
   sparkleRight: {
     position: 'absolute',
-    right: 6,
+    right: 4,
     top: 36,
   },
   titleText: {
     fontWeight: '700',
-    color: TITLE_INK,
+    color: INK,
     textAlign: 'center',
     letterSpacing: -0.4,
   },
@@ -325,31 +508,38 @@ const styles = StyleSheet.create({
   },
   speechBubbleWrapper: {
     position: 'absolute',
-    top: -30,
+    top: -38,
     right: 18,
-    maxWidth: 200,
+    maxWidth: 220,
     zIndex: 25,
   },
   speechBubbleCard: {
-    backgroundColor: 'rgba(255, 252, 246, 0.97)',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    backgroundColor: 'rgba(255, 252, 246, 0.98)',
+    borderRadius: 22,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1.5,
     borderColor: 'rgba(215, 195, 170, 0.6)',
     shadowColor: '#1B2A4A',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    shadowOpacity: 0.14,
+    shadowRadius: 10,
     elevation: 4,
   },
   speechBubbleText: {
     fontFamily: 'Inter_500Medium',
-    fontSize: 12.5,
+    fontSize: 13,
     color: '#1B2A4A',
-    lineHeight: 17,
+    lineHeight: 18,
     textAlign: 'center',
     fontWeight: '600',
+  },
+  characterBadge: {
+    fontSize: 11,
+    color: '#8A9BB3',
+    textAlign: 'right',
+    marginTop: 4,
+    fontStyle: 'italic',
   },
   speechBubbleTail: {
     position: 'absolute',
@@ -363,11 +553,43 @@ const styles = StyleSheet.create({
     borderStyle: 'solid',
     borderLeftColor: 'transparent',
     borderRightColor: 'transparent',
-    borderTopColor: 'rgba(255, 252, 246, 0.97)',
+    borderTopColor: 'rgba(255, 252, 246, 0.98)',
+  },
+  summoningPlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  auraRingOuter: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    borderWidth: 2,
+    borderColor: 'rgba(74, 144, 226, 0.3)',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  auraRingInner: {
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: 'rgba(255, 253, 248, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  summoningText: {
+    fontSize: 11.5,
+    color: '#556882',
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 16,
+    fontWeight: '500',
   },
   inputSection: {
     position: 'absolute',
-    bottom: 34,
+    bottom: 32,
     left: 18,
     right: 18,
     zIndex: 30,
@@ -376,16 +598,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 254, 250, 0.96)',
-    borderRadius: 28,
+    borderRadius: 26,
     paddingHorizontal: 18,
     paddingVertical: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.14,
-    shadowRadius: 12,
+    shadowRadius: 14,
     elevation: 8,
     borderWidth: 1.5,
-    borderColor: 'rgba(215, 195, 170, 0.35)',
+    borderColor: 'rgba(215, 195, 170, 0.45)',
   },
   textInput: {
     flex: 1,
@@ -399,5 +621,92 @@ const styles = StyleSheet.create({
     padding: 6,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  dualSparklesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  smallSparkleOffset: {
+    marginTop: -8,
+    marginLeft: -4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalHeaderIcon: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    fontSize: 12.5,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
+    marginBottom: 18,
+  },
+  modalInput: {
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 13,
+    color: '#0F172A',
+    marginBottom: 14,
+  },
+  modalSaveButton: {
+    width: '100%',
+    backgroundColor: '#4338CA',
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#4338CA',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+  },
+  modalSaveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalCloseButton: {
+    paddingVertical: 8,
+  },
+  modalCloseButtonText: {
+    color: '#64748B',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });
