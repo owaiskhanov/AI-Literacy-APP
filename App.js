@@ -18,6 +18,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import BrandLogo from './components/BrandLogo';
 import WelcomeBack from './components/WelcomeBack';
+import UserNameScreen from './components/UserNameScreen';
 
 // Complete auth session if redirected back to web browser
 WebBrowser.maybeCompleteAuthSession();
@@ -119,40 +120,16 @@ export default function App() {
   const baseBottom = Platform.OS === 'ios' ? 36 : 48;
   const buttonBottom = baseBottom + height * 0.17;
 
-  // Signed-in User View
+  // Signed-in User View -> Page Two: User Name Screen
   if (userInfo) {
     return (
-      <View style={styles.container}>
-        <StatusBar style="dark" translucent />
-        <ImageBackground
-          source={require('./assets/background.webp')}
-          style={styles.backgroundImage}
-          resizeMode="cover"
-        >
-          <View style={[styles.signedInContainer, { bottom: buttonBottom }]}>
-            <View style={styles.userCard}>
-              {userInfo.picture ? (
-                <Image source={{ uri: userInfo.picture }} style={styles.userAvatar} />
-              ) : (
-                <View style={[styles.userAvatar, styles.avatarPlaceholder]}>
-                  <Text style={styles.avatarInitial}>
-                    {(userInfo.name || userInfo.email || 'U')[0].toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              <Text style={styles.userName}>{userInfo.name || 'AI Literacy Explorer'}</Text>
-              <Text style={styles.userEmail}>{userInfo.email}</Text>
-              <TouchableOpacity
-                style={styles.signOutButton}
-                activeOpacity={0.88}
-                onPress={handleSignOut}
-              >
-                <Text style={styles.signOutButtonText}>Sign Out</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </ImageBackground>
-      </View>
+      <UserNameScreen
+        initialName={userInfo.name || ''}
+        onBack={handleSignOut}
+        onContinue={(chosenName) => {
+          Alert.alert('Welcome!', `Hi ${chosenName || userInfo.name || 'Explorer'}! Welcome to AI Literacy!`);
+        }}
+      />
     );
   }
 
