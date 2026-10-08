@@ -19,6 +19,7 @@ import * as Google from 'expo-auth-session/providers/google';
 import BrandLogo from './components/BrandLogo';
 import WelcomeBack from './components/WelcomeBack';
 import UserNameScreen from './components/UserNameScreen';
+import CharacterScreen from './components/CharacterScreen';
 
 // Complete auth session if redirected back to web browser
 WebBrowser.maybeCompleteAuthSession();
@@ -59,6 +60,8 @@ function GoogleIcon() {
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
+  const [step, setStep] = useState(1); // 1 = Login, 2 = UserName, 3 = Character
+  const [storyName, setStoryName] = useState('');
   const { width, height } = useWindowDimensions();
   const [fontsLoaded] = useFonts({ Inter_500Medium, Inter_800ExtraBold });
 
@@ -91,6 +94,7 @@ export default function App() {
       });
       const user = await res.json();
       setUserInfo(user);
+      setStep(2);
       setLoading(false);
       Alert.alert('Signed In', `Welcome back, ${user.name || user.email}!`);
     } catch (err) {
@@ -114,20 +118,34 @@ export default function App() {
 
   const handleSignOut = () => {
     setUserInfo(null);
+    setStep(1);
   };
 
   // Lifted upwards (+17% of screen height) into the sunlit stone courtyard
   const baseBottom = Platform.OS === 'ios' ? 36 : 48;
   const buttonBottom = baseBottom + height * 0.17;
 
-  // Signed-in User View -> Page Two: User Name Screen
-  if (userInfo) {
+  // Page Three: Character Generation Page
+  if (userInfo && step === 3) {
+    return (
+      <CharacterScreen
+        onBack={() => setStep(2)}
+        onComplete={() => {
+          Alert.alert('Character Saved!', `Your character is ready for the adventure! 🌟`);
+        }}
+      />
+    );
+  }
+
+  // Page Two: User Name Screen
+  if (userInfo && step === 2) {
     return (
       <UserNameScreen
         initialName={userInfo.name || ''}
         onBack={handleSignOut}
         onContinue={(chosenName) => {
-          Alert.alert('Welcome!', `Hi ${chosenName || userInfo.name || 'Explorer'}! Welcome to AI Literacy!`);
+          setStoryName(chosenName || userInfo.name || 'Explorer');
+          setStep(3);
         }}
       />
     );
