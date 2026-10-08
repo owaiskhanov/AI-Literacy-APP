@@ -26,10 +26,10 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_CLIENT_ID = '584201357489-9ne3ab41e64o7tqbrh6cvjir832brcin.apps.googleusercontent.com';
 
 // Brand block position (fractions of screen size)
-const BRAND_TOP = 0.04; // 4% of screen height from the top
+const BRAND_TOP = 0.06; // 6% of screen height from the top
 const BRAND_CENTER = false; // Left Wall alignment
 const BRAND_LEFT_PX = 15; // base offset from the left edge
-const BRAND_LEFT_EXTRA = 0.03; // + 3% of screen width
+const BRAND_LEFT_EXTRA = 0.04; // + 4% of screen width (moved 1% right)
 
 function GoogleIcon() {
   return (
