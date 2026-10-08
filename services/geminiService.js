@@ -28,10 +28,12 @@ export function getGeminiApiKey() {
  */
 async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
   const modelsToTry = [
-    'gemini-2.5-flash',
-    'gemini-2.0-flash',
-    'gemini-1.5-flash',
+    'gemini-3.8-flash',
+    'gemini-3.5-flash',
+    'gemini-flash-latest',
+    'gemini-flash-lite-latest',
     'gemini-3.1-flash-lite',
+    'gemini-2.5-flash',
   ];
 
   const systemInstruction =
@@ -88,66 +90,55 @@ async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
 }
 
 /**
- * 2. Generate the character image using Gemini Image generation (Imagen 3 / Gemini Flash Image)
+ * 2. Generate the character image using Gemini Image generation (gemini-3.1-flash-image)
  */
 async function generateCharacterImage(imagePrompt, apiKey) {
-  // Method A: Try Imagen 3 Predict API
-  try {
-    const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`;
-    const res = await fetch(imagenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt: imagePrompt }],
-        parameters: { sampleCount: 1, aspectRatio: '1:1' },
-      }),
-    });
+  const imageModels = [
+    'gemini-3.1-flash-image',
+    'gemini-2.5-flash-image',
+    'gemini-3-pro-image',
+  ];
 
-    if (res.ok) {
-      const data = await res.json();
-      const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
-      const mime = data?.predictions?.[0]?.mimeType || 'image/png';
-      if (b64) {
-        return `data:${mime};base64,${b64}`;
+  let lastErr = null;
+  for (const model of imageModels) {
+    try {
+      const geminiImageUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(geminiImageUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: imagePrompt }],
+            },
+          ],
+          generationConfig: {
+            responseModalities: ['IMAGE'],
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        lastErr = new Error(`Image Generation Error (${model} - ${res.status}): ${errText}`);
+        continue;
       }
-    }
-  } catch (err) {
-    console.warn('Imagen 3 attempt failed, trying Gemini 3.1 Flash Image:', err.message);
-  }
 
-  // Method B: Try Gemini 3.1 Flash Image generateContent API
-  const geminiImageUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent?key=${apiKey}`;
-  const res = await fetch(geminiImageUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: imagePrompt }],
-        },
-      ],
-      generationConfig: {
-        responseModalities: ['IMAGE'],
-      },
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Image Generation Error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  const candidate = data?.candidates?.[0];
-  const parts = candidate?.content?.parts || [];
-  for (const part of parts) {
-    if (part.inlineData) {
-      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      const data = await res.json();
+      const candidate = data?.candidates?.[0];
+      const parts = candidate?.content?.parts || [];
+      for (const part of parts) {
+        if (part.inlineData) {
+          return `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+        }
+      }
+    } catch (err) {
+      lastErr = err;
     }
   }
 
-  throw new Error('Image data was not returned in Gemini response');
+  throw lastErr || new Error('Image data was not returned in Gemini response');
 }
 
 /**
