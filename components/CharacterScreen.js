@@ -342,7 +342,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
             <View style={styles.inputCard}>
               <TextInput
                 style={styles.textInput}
-                placeholder="A brave fox who loves the ocean"
+                placeholder="A playful fox with crystal wings..."
                 placeholderTextColor="#8C9CAE"
                 value={prompt}
                 onChangeText={setPrompt}
