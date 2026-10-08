@@ -81,6 +81,69 @@ export default function CharacterScreen({ onBack, onComplete }) {
   const bubbleScale = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0.7)).current;
+  const starSpinAnim = useRef(new Animated.Value(0)).current;
+  const starScaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Animate stars when generating (loading)
+  useEffect(() => {
+    let loopAnim = null;
+    if (loading) {
+      loopAnim = Animated.loop(
+        Animated.parallel([
+          Animated.sequence([
+            Animated.timing(starSpinAnim, {
+              toValue: 1,
+              duration: 1300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(starSpinAnim, {
+              toValue: 0,
+              duration: 0,
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.sequence([
+            Animated.timing(starScaleAnim, {
+              toValue: 1.35,
+              duration: 650,
+              useNativeDriver: true,
+            }),
+            Animated.timing(starScaleAnim, {
+              toValue: 0.9,
+              duration: 650,
+              useNativeDriver: true,
+            }),
+          ]),
+        ])
+      );
+      loopAnim.start();
+    } else {
+      Animated.parallel([
+        Animated.timing(starSpinAnim, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(starScaleAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+    return () => {
+      if (loopAnim) loopAnim.stop();
+    };
+  }, [loading]);
+
+  const starRotation = starSpinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  const starLoadingAnimatedStyle = {
+    transform: [{ rotate: starRotation }, { scale: starScaleAnim }],
+  };
 
   useEffect(() => {
     // Check initial API key
@@ -254,9 +317,9 @@ export default function CharacterScreen({ onBack, onComplete }) {
           {/* Heading with Fairytale Star Sparkles */}
           <Animated.View style={[styles.headerContainer, { opacity: fadeAnim }]}>
             <View style={styles.titleSparkleRow}>
-              <View style={styles.sparkleLeft}>
+              <Animated.View style={[styles.sparkleLeft, starLoadingAnimatedStyle]}>
                 <StarSparkle size={18} color="#DE9E36" />
-              </View>
+              </Animated.View>
               <Text
                 style={[
                   styles.titleText,
@@ -269,10 +332,35 @@ export default function CharacterScreen({ onBack, onComplete }) {
               >
                 {'Dream up your\ncharacter'}
               </Text>
-              <View style={styles.sparkleRight}>
+              <Animated.View style={[styles.sparkleRight, starLoadingAnimatedStyle]}>
                 <StarSparkle size={14} color="#DE9E36" />
-              </View>
+              </Animated.View>
             </View>
+          </Animated.View>
+
+          {/* Dedicated Non-overlapping Speech Bubble (Safely below title, beside character) */}
+          <Animated.View
+            style={[
+              styles.speechBubbleWrapper,
+              {
+                top: height * 0.185,
+                opacity: fadeAnim,
+                transform: [{ scale: bubbleScale }],
+              },
+            ]}
+          >
+            <View style={styles.speechBubbleCard}>
+              <Text style={styles.speechBubbleText}>
+                {loading
+                  ? (loadingStep || 'Summoning your character with Gemini 3.8... ✨')
+                  : talkBubble}
+              </Text>
+              {characterName ? (
+                <Text style={styles.characterBadge}>— {characterName}</Text>
+              ) : null}
+            </View>
+            {/* Pointer Tail towards character */}
+            <View style={styles.speechBubbleTail} />
           </Animated.View>
 
           {/* Character Viewport Stage (no background frame, transparent on rocks) */}
@@ -286,27 +374,6 @@ export default function CharacterScreen({ onBack, onComplete }) {
               },
             ]}
           >
-            {/* Talk / Speech Bubble beside character's head */}
-            <Animated.View
-              style={[
-                styles.speechBubbleWrapper,
-                { transform: [{ scale: bubbleScale }] },
-              ]}
-            >
-              <View style={styles.speechBubbleCard}>
-                <Text style={styles.speechBubbleText}>
-                  {loading
-                    ? (loadingStep || 'Summoning your character with Gemini 3.1... ✨')
-                    : talkBubble}
-                </Text>
-                {characterName ? (
-                  <Text style={styles.characterBadge}>— {characterName}</Text>
-                ) : null}
-              </View>
-              {/* Pointer Tail towards character */}
-              <View style={styles.speechBubbleTail} />
-            </Animated.View>
-
             {/* Character Render: Dynamic AI Generated or Inviting Magic Summoning Aura */}
             {characterImageUri ? (
               <View style={styles.characterContainer}>
@@ -522,9 +589,8 @@ const styles = StyleSheet.create({
   },
   speechBubbleWrapper: {
     position: 'absolute',
-    top: -38,
-    right: 18,
-    maxWidth: 220,
+    right: 16,
+    maxWidth: 215,
     zIndex: 25,
   },
   speechBubbleCard: {

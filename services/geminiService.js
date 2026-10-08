@@ -43,7 +43,8 @@ async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
     "1. STYLE: Always 3D Pixar / DreamWorks animated movie style character render. High-end 3D CGI, smooth subsurface scattering, tactile stylized finish, adorable expressive face.\n" +
     "2. MYTHICAL TOUCH: Always make the character slightly mythical and enchanted, regardless of what was requested (even for common animals). Infuse subtle magical traits: celestial stardust, glowing mystical markings, tiny iridescent fairy/dragon wings, enchanted crystal horns, or glowing gemstone eyes.\n" +
     "3. BACKGROUND: Strict NO BACKGROUND isolated asset. Pure solid white (#FFFFFF) background cutout sticker with absolutely NO floor, NO ground shadows, NO scenery, NO borders.\n" +
-    "4. POSE & GROUNDING (ALWAYS STANDING): Mandatory full-body standing or perched pose with feet, paws, or talons planted firmly flat at the bottom base of the frame, full body completely visible from head to toe. The character must stand upright so it plants firmly on a stone pedestal. Never floating in mid-air, never flying without ground contact, never lying down, and never cropped at the waist, knees, or neck.\n\n" +
+    "4. POSE & GROUNDING (ALWAYS STANDING): Mandatory full-body standing or perched pose with feet, paws, or talons planted firmly flat at the bottom base of the frame, full body completely visible from head to toe. The character must stand upright so it plants firmly on a stone pedestal. Never floating in mid-air, never flying without ground contact, never lying down, and never cropped at the waist, knees, or neck.\n" +
+    "5. DIALOGUE LENGTH: talkBubble MUST be a short, sweet 1-2 sentence spoken greeting (strictly 12 to 18 words maximum). E.g. \"The ocean breeze is calling! Adventure awaits beyond the horizon! 🌊⚓\". Never write long paragraphs.\n\n" +
     "Output strictly valid JSON format:\n" +
     '{"characterName": "...", "talkBubble": "...", "imagePrompt": "..."}';
 
