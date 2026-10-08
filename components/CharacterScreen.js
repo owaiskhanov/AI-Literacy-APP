@@ -206,7 +206,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
 
   const titleFontSize = Math.min(width * 0.096, 38);
   const characterSize = Math.min(width * 0.74, 340);
-  const characterBottom = height * 0.16;
+  const characterBottom = height * 0.25;
 
   return (
     <View style={styles.container}>
@@ -306,14 +306,25 @@ export default function CharacterScreen({ onBack, onComplete }) {
 
             {/* Character Render: Dynamic AI Generated or Inviting Magic Summoning Aura */}
             {characterImageUri ? (
-              <Image
-                source={{ uri: characterImageUri }}
-                style={{
-                  width: characterSize,
-                  height: characterSize,
-                  resizeMode: 'contain',
-                }}
-              />
+              <View style={styles.characterContainer}>
+                {/* Luminous Soft Backlight Aura (Separates character from background) */}
+                <View style={styles.characterBackdropAura} />
+
+                {/* 3D Character Cutout Image */}
+                <Image
+                  source={{ uri: characterImageUri }}
+                  style={[
+                    styles.characterImage,
+                    {
+                      width: characterSize,
+                      height: characterSize,
+                    },
+                  ]}
+                />
+
+                {/* Ground Shadow on Rocks (Anchors feet) */}
+                <View style={styles.groundShadow} />
+              </View>
             ) : (
               <Animated.View
                 style={[
@@ -708,5 +719,43 @@ const styles = StyleSheet.create({
     color: '#64748B',
     fontSize: 13,
     fontWeight: '500',
+  },
+  characterContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  characterBackdropAura: {
+    position: 'absolute',
+    width: 320,
+    height: 320,
+    borderRadius: 160,
+    backgroundColor: 'rgba(255, 255, 255, 0.55)',
+    shadowColor: '#FFF8DC',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.85,
+    shadowRadius: 32,
+    elevation: 8,
+    zIndex: -1,
+  },
+  characterImage: {
+    resizeMode: 'contain',
+    zIndex: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+  },
+  groundShadow: {
+    width: 190,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(10, 28, 62, 0.42)',
+    marginTop: -10,
+    shadowColor: '#0A1C3E',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    zIndex: 5,
+    transform: [{ scaleY: 0.65 }],
   },
 });
