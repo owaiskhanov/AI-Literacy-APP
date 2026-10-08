@@ -25,6 +25,12 @@
     "plugins": [
       "expo-font",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a9550ba4-b6c5-40fb-83fb-86754bf04750"
+      }
+    },
+    "owner": "owaiskhanov"
   }
 }
