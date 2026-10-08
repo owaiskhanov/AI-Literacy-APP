@@ -66,10 +66,10 @@ export default function UserNameScreen({
   const inputLeft = width * 0.40;
   const inputRight = 24;
 
-  // Header text block positioned in upper cream expanse
-  const headerTop = height * 0.28;
+  // Header text block positioned in upper cream expanse (32% from top)
+  const headerTop = height * 0.32;
   const titleFontSize = Math.min(width * 0.096, 38);
-  const subtitleFontSize = Math.min(width * 0.04, 15.5);
+  const subtitleFontSize = Math.min(width * 0.034, 13.5);
 
   const serifFont = Platform.select({
     ios: 'Georgia',
@@ -128,7 +128,11 @@ export default function UserNameScreen({
             >
               {'What should\nwe call you?'}
             </Text>
-            <Text style={[styles.subtitleText, { fontSize: subtitleFontSize }]}>
+            <Text
+              style={[styles.subtitleText, { fontSize: subtitleFontSize }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               Pick a story name. Keep your real name private.
             </Text>
           </Animated.View>
@@ -214,8 +218,8 @@ const styles = StyleSheet.create({
   },
   headerWrapper: {
     position: 'absolute',
-    left: 20,
-    right: 20,
+    left: 12,
+    right: 12,
     alignItems: 'center',
     zIndex: 10,
   },
@@ -229,8 +233,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     color: SUBTITLE_COLOR,
     textAlign: 'center',
-    marginTop: 10,
-    paddingHorizontal: 12,
+    marginTop: 8,
+    paddingHorizontal: 4,
     letterSpacing: -0.15,
   },
   inputWrapper: {
