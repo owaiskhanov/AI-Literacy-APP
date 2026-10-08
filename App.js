@@ -24,8 +24,9 @@ import CharacterScreen from './components/CharacterScreen';
 // Complete auth session if redirected back to web browser
 WebBrowser.maybeCompleteAuthSession();
 
-// Google OAuth 2.0 Client ID
-const GOOGLE_CLIENT_ID = '584201357489-9ne3ab41e64o7tqbrh6cvjir832brcin.apps.googleusercontent.com';
+// Google OAuth 2.0 Client IDs
+const GOOGLE_WEB_CLIENT_ID = '584201357489-9ne3ab41e64o7tqbrh6cvjir832brcin.apps.googleusercontent.com';
+const GOOGLE_ANDROID_CLIENT_ID = '584201357489-fsirf57kfgegdr6l06p9011ecjfv7al6.apps.googleusercontent.com';
 
 // Brand block position (fractions of screen size)
 const BRAND_TOP = 0.06; // 6% of screen height from the top
@@ -67,9 +68,8 @@ export default function App() {
 
   // Hook into Google OAuth Request
   const [request, response, promptAsync] = Google.useAuthRequest({
-    webClientId: GOOGLE_CLIENT_ID,
-    iosClientId: GOOGLE_CLIENT_ID,
-    androidClientId: GOOGLE_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID,
   });
 
   // Handle OAuth response
