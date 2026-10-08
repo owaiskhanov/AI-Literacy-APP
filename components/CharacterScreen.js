@@ -272,7 +272,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
 
   const titleFontSize = Math.min(width * 0.076, 29);
   const characterSize = Math.min(width * 0.96, 400);
-  const characterBottom = height * 0.22 - 5;
+  const characterBottom = height * 0.17 - 5;
 
   return (
     <View style={styles.container}>

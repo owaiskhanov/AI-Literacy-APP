@@ -126,25 +126,28 @@ export default function App() {
   const buttonBottom = baseBottom + height * 0.17;
 
   // Page Three: Character Generation Page
-  if (userInfo && step === 3) {
+  if (step === 3) {
     return (
       <CharacterScreen
         onBack={() => setStep(2)}
         onComplete={() => {
-          Alert.alert('Character Saved!', `Your character is ready for the adventure! 🌟`);
+          Alert.alert('Character Saved!', 'Your character is ready for the adventure! 🌟');
         }}
       />
     );
   }
 
   // Page Two: User Name Screen
-  if (userInfo && step === 2) {
+  if (step === 2) {
     return (
       <UserNameScreen
-        initialName={userInfo.name || ''}
-        onBack={handleSignOut}
+        initialName={userInfo?.name || storyName || ''}
+        onBack={() => {
+          if (userInfo) handleSignOut();
+          else setStep(1);
+        }}
         onContinue={(chosenName) => {
-          setStoryName(chosenName || userInfo.name || 'Explorer');
+          setStoryName(chosenName || userInfo?.name || 'Explorer');
           setStep(3);
         }}
       />
