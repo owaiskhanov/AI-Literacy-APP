@@ -75,9 +75,9 @@ export default function App() {
   // Handle OAuth response
   useEffect(() => {
     if (response?.type === 'success') {
-      const { authentication } = response;
-      if (authentication?.accessToken) {
-        fetchGoogleUser(authentication.accessToken);
+      const token = response.authentication?.accessToken || response.params?.access_token;
+      if (token) {
+        fetchGoogleUser(token);
       }
     } else if (response?.type === 'cancel' || response?.type === 'dismiss') {
       setLoading(false);
