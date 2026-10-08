@@ -205,14 +205,14 @@ export default function CharacterScreen({ onBack, onComplete }) {
   });
 
   const titleFontSize = Math.min(width * 0.096, 38);
-  const characterSize = Math.min(width * 0.74, 340);
+  const characterSize = Math.min(width * 0.88, 390);
   const characterBottom = height * 0.25;
 
   return (
     <View style={styles.container}>
       <StatusBar style="dark" translucent />
       <ImageBackground
-        source={require('../assets/generateCharacterBackground.webp')}
+        source={require('../assets/characterStageRockBg.webp')}
         style={styles.backgroundImage}
         resizeMode="cover"
       >
