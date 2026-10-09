@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   StyleSheet,
   View,
@@ -10,6 +10,8 @@ import {
   Platform,
   Modal,
   Alert,
+  Animated,
+  Easing,
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -128,9 +130,83 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
     default: 'serif',
   });
 
-  const topSectionHeight = Math.max(height * 0.28, 220);
-  const characterSize = Math.min(width * 0.32, 125);
+  // 70% bigger character in top corner (120px * 1.7 ≈ 205-212px)
+  const characterSize = Math.min(width * 0.52, 212);
+  const topSectionHeight = Math.max(height * 0.33, 268);
   const cardWidth = (width - 32 - 12) / 2;
+
+  // Home Screen-style Animation Controllers
+  const titleFade = useRef(new Animated.Value(0)).current;
+  const titleSlide = useRef(new Animated.Value(8)).current;
+  const cursiveFade = useRef(new Animated.Value(0)).current;
+  const cursiveScale = useRef(new Animated.Value(0.72)).current;
+  const cursiveSlide = useRef(new Animated.Value(6)).current;
+  const badgeFade = useRef(new Animated.Value(0)).current;
+  const charScale = useRef(new Animated.Value(0.85)).current;
+  const charFade = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      // 1. Character pops in smoothly (70% bigger!)
+      Animated.timing(charFade, {
+        toValue: 1,
+        duration: 450,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(charScale, {
+        toValue: 1,
+        friction: 6,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+      // 2. Headline & Cursive Character Name sequence (matching Home Screen)
+      Animated.sequence([
+        Animated.delay(120),
+        Animated.parallel([
+          Animated.timing(titleFade, {
+            toValue: 1,
+            duration: 380,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(titleSlide, {
+            toValue: 0,
+            duration: 380,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        // Cursive Character Name blooming in
+        Animated.parallel([
+          Animated.timing(cursiveFade, {
+            toValue: 1,
+            duration: 520,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.spring(cursiveScale, {
+            toValue: 1,
+            friction: 5,
+            tension: 70,
+            useNativeDriver: true,
+          }),
+          Animated.timing(cursiveSlide, {
+            toValue: 0,
+            duration: 460,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        // Signature Item badge appears
+        Animated.timing(badgeFade, {
+          toValue: 1,
+          duration: 320,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, []);
 
   const handleStartProject = () => {
     if (selectedProject) {
@@ -150,7 +226,7 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {/* TOP 30% SECTION: Castle & Sky + Saved Character on Right */}
+        {/* TOP 30% SECTION: Castle & Sky + 70% Bigger Saved Character on Right */}
         <View style={[styles.topSection, { height: topSectionHeight }]}>
           {/* Top Navigation Row: Back Button & Child Realm grouped on the LEFT */}
           <View style={styles.topNavRow}>
@@ -178,32 +254,64 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
             </View>
           </View>
 
-          {/* Left Title, Subtitle & Signature Item */}
+          {/* Left Title: "What will you create with" + Cursive Character Name + Signature Item */}
           <View style={styles.topLeftContent}>
-            <Text
+            <Animated.Text
               style={[
-                styles.realmTitle,
+                styles.headlineTitle,
                 {
                   fontFamily: serifFont,
-                  fontSize: Math.min(width * 0.072, 27),
+                  opacity: titleFade,
+                  transform: [{ translateY: titleSlide }],
                 },
               ]}
             >
-              {'Choose Your\nAdventure'}
-            </Text>
-            <Text style={styles.realmSubtitle} numberOfLines={2}>
-              What will you create with{' '}
-              <Text style={styles.characterHighlight}>{characterName}</Text>?
-            </Text>
-            <View style={styles.signatureBadgeRow}>
+              {'What will you\ncreate with'}
+            </Animated.Text>
+
+            <Animated.View
+              style={[
+                styles.cursiveContainer,
+                {
+                  opacity: cursiveFade,
+                  transform: [{ scale: cursiveScale }, { translateY: cursiveSlide }],
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.cursiveCharacterName,
+                  {
+                    fontFamily: Platform.select({
+                      web: "'Sacramento', cursive",
+                      default: 'Sacramento_400Regular',
+                    }),
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {characterName}
+              </Text>
+              <Text style={styles.cursiveQuestionMark}>?</Text>
+            </Animated.View>
+
+            <Animated.View style={[styles.signatureBadgeRow, { opacity: badgeFade }]}>
               <View style={styles.signatureBadge}>
                 <Text style={styles.signatureBadgeText}>✨ Item: {signatureItem}</Text>
               </View>
-            </View>
+            </Animated.View>
           </View>
 
-          {/* Right Side: Saved Character Cutout in Dedicated Sky Dock */}
-          <View style={styles.topRightCharacter}>
+          {/* Right Side: Saved Character Cutout in Dedicated Sky Dock (70% LARGER!) */}
+          <Animated.View
+            style={[
+              styles.topRightCharacter,
+              {
+                opacity: charFade,
+                transform: [{ scale: charScale }],
+              },
+            ]}
+          >
             {/* Speech Bubble to the LEFT of Character Head (Never overlaps badge or face) */}
             <View style={styles.characterBubble}>
               <Text style={styles.characterBubbleText} numberOfLines={1}>
@@ -213,7 +321,7 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
             </View>
 
             <View style={[styles.characterWrapper, { width: characterSize, height: characterSize }]}>
-              <SubtleBackGlow size={characterSize + 30} />
+              <SubtleBackGlow size={characterSize + 40} />
               {characterImageUri ? (
                 <Image
                   source={typeof characterImageUri === 'string' && (characterImageUri.startsWith('http') || characterImageUri.startsWith('data:'))
@@ -237,7 +345,7 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
                 </Text>
               </View>
             </View>
-          </View>
+          </Animated.View>
         </View>
 
         {/* BOTTOM 70% SECTION: 4 Rich Project Cards on Warm Canvas */}
@@ -414,36 +522,47 @@ const styles = StyleSheet.create({
     color: '#0A1C3E',
   },
   topLeftContent: {
-    maxWidth: '56%',
-    marginBottom: 10,
+    maxWidth: '52%',
+    marginBottom: 8,
     zIndex: 15,
   },
-  realmTitle: {
-    color: '#0A1C3E',
+  headlineTitle: {
+    fontSize: 22,
     fontWeight: '800',
-    lineHeight: 31,
+    color: '#0A1C3E',
+    lineHeight: 28,
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(255, 255, 255, 0.9)',
+    textShadowColor: 'rgba(255, 255, 255, 0.95)',
     textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 4,
+    textShadowRadius: 3,
   },
-  realmSubtitle: {
-    fontSize: 12,
-    color: '#334155',
-    marginTop: 4,
-    lineHeight: 16.5,
-    fontWeight: '500',
+  cursiveContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginTop: 2,
+    marginBottom: 4,
   },
-  characterHighlight: {
-    fontWeight: '700',
+  cursiveCharacterName: {
+    fontSize: 38,
     color: '#1E3A8A',
+    lineHeight: 44,
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(255, 255, 255, 0.95)',
+    textShadowOffset: { width: 0, height: 1.5 },
+    textShadowRadius: 3,
+  },
+  cursiveQuestionMark: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#1E3A8A',
+    marginLeft: 3,
   },
   signatureBadgeRow: {
-    marginTop: 6,
+    marginTop: 4,
   },
   signatureBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     paddingHorizontal: 10,
     paddingVertical: 3.5,
     borderRadius: 14,
@@ -460,11 +579,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2563EB',
   },
-  // Top Right Saved Character
+  // Top Right Saved Character (70% Bigger!)
   topRightCharacter: {
     position: 'absolute',
-    right: 14,
-    top: 48,
+    right: 4,
+    top: 38,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 18,
@@ -483,7 +602,7 @@ const styles = StyleSheet.create({
   },
   characterBubble: {
     position: 'absolute',
-    top: 10,
+    top: 14,
     left: -66,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 9,
@@ -518,22 +637,22 @@ const styles = StyleSheet.create({
   },
   characterNamePill: {
     position: 'absolute',
-    bottom: -8,
+    bottom: -6,
     backgroundColor: 'rgba(10, 28, 62, 0.92)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 12,
+    paddingHorizontal: 11,
+    paddingVertical: 3.5,
+    borderRadius: 14,
     zIndex: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: 'rgba(255, 255, 255, 0.45)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 5,
+    elevation: 4,
   },
   characterNamePillText: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '700',
     color: '#FDE68A',
   },

@@ -67,7 +67,11 @@ export default function App() {
   const [storyName, setStoryName] = useState('');
   const [activeCharacter, setActiveCharacter] = useState(null);
   const { width, height } = useWindowDimensions();
-  const [fontsLoaded] = useFonts({ Inter_500Medium, Inter_800ExtraBold });
+  const [fontsLoaded] = useFonts({
+    Inter_500Medium,
+    Inter_800ExtraBold,
+    Sacramento_400Regular: require('@expo-google-fonts/sacramento/400Regular/Sacramento_400Regular.ttf'),
+  });
 
   // Hook into Google OAuth Request
   const [request, response, promptAsync] = Google.useAuthRequest({
