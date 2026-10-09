@@ -151,9 +151,10 @@ export default function StoryScreen({
     }
   };
 
-  // Suggest a whimsical scene tailored to character & beat
+  // Suggest a whimsical scene tailored to character & beat, with continuity from Page 1
   const handleSuggestScene = () => {
-    const suggestions = getSceneSuggestions(currentBeatIndex, characterName, signatureItem);
+    const p1Prompt = pages[0]?.choiceLabel || pages[0]?.storyText || '';
+    const suggestions = getSceneSuggestions(currentBeatIndex, characterName, signatureItem, p1Prompt);
     const nextIdx = (suggestionIndex + 1) % suggestions.length;
     setSuggestionIndex(nextIdx);
     setCustomIdea(suggestions[nextIdx]);
@@ -286,11 +287,12 @@ export default function StoryScreen({
           )}
         </View>
 
-        {/* 6 STAR STEPPERS ACROSS TOP (Super simple for kids) */}
+        {/* 6 STAR STEPPERS ACROSS TOP (Shows page thumbnail when generated) */}
         <View style={styles.starStepperRow}>
           {KID_FRIENDLY_BEATS.map((beat, idx) => {
             const isDone = Boolean(pages[idx]);
             const isCurrent = idx === currentBeatIndex;
+            const pageImage = pages[idx]?.imageUri;
             return (
               <TouchableOpacity
                 key={beat.step}
@@ -302,9 +304,23 @@ export default function StoryScreen({
                 onPress={() => setCurrentBeatIndex(idx)}
                 activeOpacity={0.8}
               >
-                <Text style={styles.starStepIcon}>
-                  {isDone ? '✓' : isCurrent ? '⭐' : idx + 1}
-                </Text>
+                {isDone && pageImage ? (
+                  <View style={styles.starThumbWrap}>
+                    <Image
+                      source={
+                        typeof pageImage === 'string' && (pageImage.startsWith('data:') || pageImage.startsWith('http'))
+                          ? { uri: pageImage }
+                          : require('../assets/cards/card_story.jpg')
+                      }
+                      style={styles.starThumbImg}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : (
+                  <Text style={[styles.starStepIcon, isCurrent && styles.starStepIconCurrent]}>
+                    {isCurrent ? '⭐' : idx + 1}
+                  </Text>
+                )}
                 <Text style={[styles.starStepText, isCurrent && styles.starStepTextCurrent]}>
                   P.{idx + 1}
                 </Text>
@@ -344,19 +360,68 @@ export default function StoryScreen({
             </Animated.View>
           </View>
 
-          {/* SQUARE STORY ILLUSTRATION VIEWPORT */}
+          {/* SQUARE STORY ILLUSTRATION VIEWPORT (WITH DREAMY FADED CORNERS) */}
           {currentPageData ? (
             <View style={styles.paintedCard}>
               <View style={styles.paintedImgWrap}>
                 <Image
                   source={
-                    currentPageData.imageUri && currentPageData.imageUri.startsWith('data:')
+                    currentPageData.imageUri && (currentPageData.imageUri.startsWith('data:') || currentPageData.imageUri.startsWith('http'))
                       ? { uri: currentPageData.imageUri }
                       : require('../assets/cards/card_story.jpg')
                   }
                   style={styles.paintedImg}
                   resizeMode="cover"
                 />
+
+                {/* DREAMY FADED CORNERS & SIDES VIGNETTE OVERLAY */}
+                <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+                  <Svg height="100%" width="100%">
+                    <Defs>
+                      <RadialGradient
+                        id="dreamyCorners"
+                        cx="50%"
+                        cy="50%"
+                        rx="50%"
+                        ry="50%"
+                        fx="50%"
+                        fy="50%"
+                      >
+                        <Stop offset="55%" stopColor="#FFFFFF" stopOpacity="0" />
+                        <Stop offset="75%" stopColor="#FFFFFF" stopOpacity="0.30" />
+                        <Stop offset="90%" stopColor="#FFFFFF" stopOpacity="0.75" />
+                        <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.95" />
+                      </RadialGradient>
+                    </Defs>
+                    <Rect x="0" y="0" width="100%" height="100%" fill="url(#dreamyCorners)" />
+                  </Svg>
+                </View>
+
+                {/* INTEGRATED TALK / SPEECH BUBBLE OVER STORY SCENE */}
+                <View style={styles.paintedTalkBubble}>
+                  <View style={styles.paintedTalkAvatar}>
+                    {characterAvatar ? (
+                      <Image
+                        source={
+                          typeof characterAvatar === 'string' && (characterAvatar.startsWith('http') || characterAvatar.startsWith('data:'))
+                            ? { uri: characterAvatar }
+                            : require('../assets/characters/fox.png')
+                        }
+                        style={styles.paintedTalkAvatarImg}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <Text style={{ fontSize: 13 }}>🦊</Text>
+                    )}
+                  </View>
+                  <View style={styles.paintedTalkBody}>
+                    <Text style={styles.paintedTalkName}>{characterName}</Text>
+                    <Text style={styles.paintedTalkQuote} numberOfLines={2}>
+                      "{currentPageData.copilotReply || companionQuestion}"
+                    </Text>
+                  </View>
+                </View>
+
                 <View style={styles.paintedBadge}>
                   <Text style={styles.paintedBadgeText}>Page {currentBeatIndex + 1} of 6 ✨</Text>
                 </View>
@@ -569,7 +634,7 @@ const styles = StyleSheet.create({
   },
   whiteOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.93)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   gentleGlow: {
     position: 'absolute',
@@ -626,15 +691,15 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // 6 STAR STEPPERS (Super clean for kids)
+  // 6 STAR STEPPERS (Shows thumbnail when page is generated)
   starStepperRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
     borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(226, 232, 240, 0.8)',
   },
   starStep: {
     alignItems: 'center',
@@ -657,9 +722,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECFDF5',
   },
   starStepIcon: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '900',
     color: '#64748B',
+  },
+  starStepIconCurrent: {
+    color: '#2563EB',
   },
   starStepText: {
     fontSize: 9.5,
@@ -670,6 +738,19 @@ const styles = StyleSheet.create({
   starStepTextCurrent: {
     color: '#1E3A8A',
     fontWeight: '800',
+  },
+  starThumbWrap: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#10B981',
+    backgroundColor: '#0F172A',
+  },
+  starThumbImg: {
+    width: '100%',
+    height: '100%',
   },
 
   // SCROLL CONTENT
@@ -685,11 +766,11 @@ const styles = StyleSheet.create({
   companionDock: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
     borderRadius: 22,
     padding: 12,
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: 'rgba(219, 234, 254, 0.8)',
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
@@ -754,32 +835,84 @@ const styles = StyleSheet.create({
     borderRightColor: '#F8FAFC',
   },
 
-  // PAINTED PAGE CARD (SQUARE VIEWPORT)
+  // PAINTED PAGE CARD (SQUARE VIEWPORT WITH DREAMY CORNERS)
   paintedCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderRadius: 24,
     padding: 12,
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(255, 255, 255, 0.8)',
     marginBottom: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   paintedImgWrap: {
     width: '100%',
     aspectRatio: 1,
-    borderRadius: 18,
+    borderRadius: 22,
     overflow: 'hidden',
-    backgroundColor: '#0F172A',
+    backgroundColor: '#EFF6FF',
     position: 'relative',
     marginBottom: 12,
   },
   paintedImg: {
     width: '100%',
     height: '100%',
+  },
+  paintedTalkBubble: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FDE68A',
+    shadowColor: '#1E1B4B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 20,
+  },
+  paintedTalkAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1E1B4B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+  },
+  paintedTalkAvatarImg: {
+    width: 24,
+    height: 24,
+  },
+  paintedTalkBody: {
+    flex: 1,
+  },
+  paintedTalkName: {
+    fontSize: 9.5,
+    fontWeight: '900',
+    color: '#1E1B4B',
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  paintedTalkQuote: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0F172A',
+    lineHeight: 14,
   },
   paintedBadge: {
     position: 'absolute',
@@ -821,9 +954,9 @@ const styles = StyleSheet.create({
     width: '100%',
     aspectRatio: 1,
     borderRadius: 22,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
     borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderColor: 'rgba(226, 232, 240, 0.8)',
     padding: 10,
     marginBottom: 14,
     shadowColor: '#2563EB',
@@ -838,7 +971,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: '#CBD5E1',
-    backgroundColor: '#F8FAFC',
+    backgroundColor: 'rgba(248, 250, 252, 0.7)',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
@@ -863,11 +996,11 @@ const styles = StyleSheet.create({
 
   // DEDICATED SCENE INPUT & SUGGESTION SECTION
   sceneInputSection: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
     borderRadius: 20,
     padding: 14,
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: 'rgba(219, 234, 254, 0.8)',
     marginBottom: 14,
     shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 2 },

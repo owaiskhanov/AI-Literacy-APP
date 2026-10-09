@@ -192,10 +192,65 @@ export const SCENE_SUGGESTIONS = [
 ];
 
 /**
- * Returns 4 whimsical scene suggestions for a given story beat
+ * Continuity-aware scene suggestion generator:
+ * When beatIndex > 0 and p1Prompt is provided, suggestions directly extend
+ * what was established in Page 1 to ensure a cohesive 6-beat adventure.
  */
-export function getSceneSuggestions(beatIndex, characterName = 'Brave Companion', signatureItem = 'Star Crystal') {
+export function getSceneSuggestions(
+  beatIndex,
+  characterName = 'Brave Companion',
+  signatureItem = 'Star Crystal',
+  p1Prompt = ''
+) {
   const safeIdx = Math.max(0, Math.min(5, beatIndex || 0));
+
+  // If beat > 0 and child established an adventure context in Page 1, generate continuity options
+  const cleanedP1 = (p1Prompt || '').trim().replace(/^.*?(?:is |in |at )/i, '').slice(0, 50).trim();
+
+  if (safeIdx > 0 && cleanedP1) {
+    const context = cleanedP1.length > 5 ? cleanedP1 : 'the magical realm from Page 1';
+    switch (safeIdx) {
+      case 1: // Beat 2: The Mysterious Discovery
+        return [
+          `${characterName} is exploring around ${context} when their ${signatureItem} flashes, revealing a glowing ancient map hidden under the floorboards!`,
+          `Behind a shimmering crystal tapestry in ${context}, ${characterName} discovers an antique singing windup key floating in mid-air!`,
+          `While peering out from ${context}, ${characterName} spots a speckled dragon egg wobbling with purple sparkles right outside!`,
+          `A glowing origami stardust letter flies into ${context}, whispering an urgent secret riddle to ${characterName}!`,
+        ];
+      case 2: // Beat 3: Into The Unknown
+        return [
+          `Following the mysterious clue from ${context}, ${characterName} departs across the glowing Rainbow Bridge into fluffy cotton-candy clouds!`,
+          `${characterName} leaves ${context} behind and boards a flying cloud galleon with purple sails guided by the clue!`,
+          `Venturing along the secret path from ${context}, ${characterName} hops across giant singing neon crystals with the ${signatureItem}!`,
+          `${characterName} glides down a sparkling starry slide leading away from ${context} into an uncharted enchanted forest!`,
+        ];
+      case 3: // Beat 4: The Surprising Obstacle
+        return [
+          `Far along the path from ${context}, a friendly sleepy yeti blocks the road, snoring lilac clouds with giggles!`,
+          `Ahead on the trail, a playful troop of silly monkeys surrounds ${characterName}, demanding the answer to their goofiest riddle!`,
+          `A sudden sweet cotton-candy fog rolls in, making it impossible to see the road back toward ${context}!`,
+          `${characterName} reaches a colossal musical stone gate locked tight by three glowing bells that must be rung in harmony!`,
+        ];
+      case 4: // Beat 5: The Heroic Magic
+        return [
+          `${characterName} raises the ${signatureItem} high, shining a gentle warm beam of friendship that melts away the obstacle into harmless sparkles!`,
+          `Tapping the ${signatureItem} in peaceful rhythm, ${characterName} plays a soothing lullaby, turning the challenge into a sweet new ally!`,
+          `With a brave smile, ${characterName} offers a gift of starlight from the ${signatureItem}, unlocking the enchanted passage!`,
+          `${characterName} swirls the ${signatureItem} through the air, creating a giant protective bubble of rainbow glitter that clears the way!`,
+        ];
+      case 5: // Beat 6: The Grand Celebration
+        return [
+          `Returning triumphant to ${context}, ${characterName} and all their new friends celebrate with a giant star-pancake feast under fireworks!`,
+          `${characterName} is crowned guardian of the realm back at ${context}, awarded a gleaming golden star badge of bravery!`,
+          `Surrounded by joyful laughter, ${characterName} dances with friendly creatures around a warm campfire near ${context} under shooting stars!`,
+          `Curled up cozy and safe back at ${context}, ${characterName} hugs the ${signatureItem} with a happy smile, dreaming of their next grand tale!`,
+        ];
+      default:
+        break;
+    }
+  }
+
+  // Fallback to default beat suggestions
   const baseOffset = safeIdx * 4;
   const list = [];
   for (let i = 0; i < 4; i++) {
@@ -246,7 +301,7 @@ Respond ONLY with a valid JSON object matching this schema:
 {
   "coPilotReply": "An excited, warm 1-2 sentence reaction spoken directly by ${charName} to the child celebrating their scene idea in first person (e.g., 'Oh wow! I love that idea! Let\\'s explore together!')",
   "storyText": "2 charming, lyrical picture-book sentences narrating this moment for a 6-10 year old reader in third-person picture book style featuring ${charName}.",
-  "imagePrompt": "A detailed 3D Pixar / DreamWorks cinematic illustration prompt showing ${charName} (${charDesc}, ${traits}, with ${sigItem}) inside the scene: ${chosenDetail}. Vibrant colors, volumetric soft lighting, rich fairy-tale storybook aesthetic, square 1:1 composition, whimsical mood."
+  "imagePrompt": "A detailed square 1:1 3D Pixar / DreamWorks cinematic illustration prompt showing ${charName} (${charDesc}, ${traits}, with ${sigItem}) inside the scene: ${chosenDetail}. Include an integrated whimsical illustrated talk bubble / speech balloon emerging from ${charName} with their dialogue: '${charName} says a short expressive line'. Vibrant colors, volumetric soft lighting, rich fairy-tale storybook aesthetic, square 1:1 composition, whimsical mood."
 }
 No markdown wrappers, no formatting, raw JSON only.
 `;
@@ -358,7 +413,7 @@ ${colors ? `Color Palette: ${colors}.` : ''}
 ${base64Avatar ? `IMPORTANT: The hero MUST look EXACTLY like the attached reference image of ${charName}. Maintain their exact species, facial features, colors, scales/fur, wings/horns, and Pixar 3D animated styling.` : `The hero must strictly match: ${charDesc}.`}
 `;
 
-  const fullScenePrompt = `Square 1:1 picture book illustration, full-bleed cinematic 3D children's animated feature film still, Pixar / DreamWorks render quality. Highly detailed environment, expressive lighting, whimsical fantasy aesthetic. ${characterAnchor} In this scene: ${imagePrompt}. No borders, no multiple panels, single square scene.`;
+  const fullScenePrompt = `Square 1:1 picture book illustration, full-bleed cinematic 3D children's animated feature film still, Pixar / DreamWorks render quality. Highly detailed whimsical environment, expressive lighting. ${characterAnchor} In this scene: ${imagePrompt}. IMPORTANT: Render this scene as a rich children's storybook page with an integrated whimsical speech bubble / talk bubble emerging from ${charName} containing their expressive dialogue. No multiple split panels, single square scene with gorgeous fairytale composition.`;
 
   const imageModels = ['gemini-3.1-flash-image', 'gemini-3-pro-image'];
 
