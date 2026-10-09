@@ -78,7 +78,7 @@ export const STORY_BEATS = [
       { id: 'opt_rune', icon: '💫', label: 'Wave It Like A Magic Wand', desc: 'Turning the whole barrier into harmless floating bubbles' },
       { id: 'opt_share', icon: '🤝', label: 'Offer It As A Token Of Kindness', desc: 'Sharing a heartfelt gift to open the magical gateway' },
     ],
-    hint: `Use your ${charName}'s signature power!`,
+    hint: "Use your character's signature power!",
   },
   {
     beat: 6,
