@@ -21,79 +21,44 @@ import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import {
   STORY_BEATS,
   PRESET_STORY_PAGES,
+  getSceneSuggestions,
   generateStoryPageContent,
   generateStoryPageImage,
 } from '../services/storyService';
 import { saveStoryToAccount } from '../services/characterStorage';
 import { getGeminiApiKey } from '../services/geminiService';
 
-// Kid-friendly simplified questions and punchy choices
+// Kid-friendly simplified questions across the 6-page story arc
 const KID_FRIENDLY_BEATS = [
   {
     step: 1,
-    title: 'Where do we start?',
-    question: (name) => `Where should our adventure start, storyteller?`,
-    choices: [
-      { id: 'castle', icon: '🏰', label: 'Cloud Castle', color: '#EFF6FF', borderColor: '#93C5FD' },
-      { id: 'treehouse', icon: '🌳', label: 'Magic Treehouse', color: '#ECFDF5', borderColor: '#6EE7B7' },
-      { id: 'lagoon', icon: '🌊', label: 'Rainbow Lagoon', color: '#F0FDFA', borderColor: '#5EEAD4' },
-      { id: 'bedroom', icon: '⭐', label: 'Starry Bedroom', color: '#FEF3C7', borderColor: '#FCD34D' },
-    ],
+    title: 'The Secret Beginning',
+    question: (name) => `Where should our adventure start today, storyteller?`,
   },
   {
     step: 2,
-    title: 'What did we find?',
+    title: 'The Mysterious Discovery',
     question: (name) => `Look! What mystery clue did we just find?!`,
-    choices: [
-      { id: 'map', icon: '🗺️', label: 'Golden Map', color: '#FEF3C7', borderColor: '#FCD34D' },
-      { id: 'key', icon: '🗝️', label: 'Singing Key', color: '#EFF6FF', borderColor: '#93C5FD' },
-      { id: 'egg', icon: '🥚', label: 'Dragon Egg', color: '#FDF2F8', borderColor: '#F472B6' },
-      { id: 'letter', icon: '📜', label: 'Flying Letter', color: '#F5F3FF', borderColor: '#C4B5FD' },
-    ],
   },
   {
     step: 3,
-    title: 'Where are we traveling?',
-    question: (name) => `Hold on! Where are we flying next?!`,
-    choices: [
-      { id: 'bridge', icon: '🌈', label: 'Rainbow Bridge', color: '#FDF2F8', borderColor: '#F472B6' },
-      { id: 'ship', icon: '⛵', label: 'Cloud Ship', color: '#EFF6FF', borderColor: '#93C5FD' },
-      { id: 'caves', icon: '💎', label: 'Crystal Caves', color: '#F0FDFA', borderColor: '#5EEAD4' },
-      { id: 'mushrooms', icon: '🍄', label: 'Giant Forest', color: '#ECFDF5', borderColor: '#6EE7B7' },
-    ],
+    title: 'Into The Unknown',
+    question: (name) => `Hold on tight! Where are we exploring next?!`,
   },
   {
     step: 4,
-    title: 'What is blocking our path?',
-    question: (name) => `Uh oh! Look ahead... what is blocking us?!`,
-    choices: [
-      { id: 'yeti', icon: '🐻', label: 'Sleepy Giant', color: '#FEF3C7', borderColor: '#FCD34D' },
-      { id: 'monkeys', icon: '🐒', label: 'Silly Monkeys', color: '#ECFDF5', borderColor: '#6EE7B7' },
-      { id: 'storm', icon: '☁️', label: 'Candy Storm', color: '#FDF2F8', borderColor: '#F472B6' },
-      { id: 'gate', icon: '🚪', label: 'Musical Gate', color: '#EFF6FF', borderColor: '#93C5FD' },
-    ],
+    title: 'The Surprising Obstacle',
+    question: (name) => `Uh oh! Look ahead... what is blocking our path?!`,
   },
   {
     step: 5,
-    title: 'How do we save the day?',
-    question: (name, item) => `Quick! How do we use my ${item || 'magic'}?`,
-    choices: [
-      { id: 'beam', icon: '✨', label: 'Warm Glow', color: '#FEF3C7', borderColor: '#FCD34D' },
-      { id: 'music', icon: '🎶', label: 'Sweet Song', color: '#F5F3FF', borderColor: '#C4B5FD' },
-      { id: 'bubbles', icon: '💫', label: 'Magic Bubbles', color: '#EFF6FF', borderColor: '#93C5FD' },
-      { id: 'kindness', icon: '💖', label: 'Friendship Hug', color: '#FDF2F8', borderColor: '#F472B6' },
-    ],
+    title: 'The Heroic Magic',
+    question: (name, item) => `Quick! How do we use my ${item || 'magic'} to save the day?!`,
   },
   {
     step: 6,
-    title: 'How do we celebrate?',
+    title: 'The Grand Celebration',
     question: (name) => `Hooray! How should our story finish?!`,
-    choices: [
-      { id: 'fireworks', icon: '🎆', label: 'Fireworks Party', color: '#F5F3FF', borderColor: '#C4B5FD' },
-      { id: 'pancakes', icon: '🥞', label: 'Giant Pancakes', color: '#FEF3C7', borderColor: '#FCD34D' },
-      { id: 'trophy', icon: '🏆', label: 'Golden Badges', color: '#FEF3C7', borderColor: '#F59E0B' },
-      { id: 'campfire', icon: '⛺', label: 'Cozy Campfire', color: '#ECFDF5', borderColor: '#6EE7B7' },
-    ],
   },
 ];
 
@@ -105,7 +70,7 @@ function GentleGlow({ size = 120 }) {
           <RadialGradient id="glowG" cx="50%" cy="50%" rx="50%" ry="50%">
             <Stop offset="0%" stopColor="#FFF8DC" stopOpacity="0.5" />
             <Stop offset="50%" stopColor="#FDE68A" stopOpacity="0.25" />
-            <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.8" />
           </RadialGradient>
         </Defs>
         <Rect x="0" y="0" width={size} height={size} fill="url(#glowG)" />
@@ -124,16 +89,15 @@ export default function StoryScreen({
   const { width, height } = useWindowDimensions();
 
   // Character Dossier
-  const characterName = activeCharacter?.name || 'Brave Kitsune';
+  const characterName = activeCharacter?.name || 'Brave Companion';
   const characterAvatar = activeCharacter?.avatarUri || activeCharacter?.imageUrl;
   const signatureItem = activeCharacter?.signatureItem || 'Star Crystal';
   const childAuthor = userInfo?.name || storyName || 'Explorer';
 
   // Navigation & Page State
   const [currentBeatIndex, setCurrentBeatIndex] = useState(0);
-  const [selectedChoiceId, setSelectedChoiceId] = useState(null);
   const [customIdea, setCustomIdea] = useState('');
-  const [showCustomBox, setShowCustomBox] = useState(false);
+  const [suggestionIndex, setSuggestionIndex] = useState(-1);
   const [isPainting, setIsPainting] = useState(false);
   const [loadingText, setLoadingText] = useState('');
 
@@ -163,11 +127,10 @@ export default function StoryScreen({
     return () => loop.stop();
   }, []);
 
-  // Update beat
+  // Update beat: reset scene input and trigger bounce
   useEffect(() => {
-    setSelectedChoiceId(null);
     setCustomIdea('');
-    setShowCustomBox(false);
+    setSuggestionIndex(-1);
 
     Animated.sequence([
       Animated.timing(bubbleScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
@@ -175,7 +138,7 @@ export default function StoryScreen({
     ]).start();
   }, [currentBeatIndex]);
 
-  // Read aloud helper
+  // Read aloud helper for reader
   const handleSpeak = (text) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -188,13 +151,21 @@ export default function StoryScreen({
     }
   };
 
-  // Paint Page with AI
+  // Suggest a whimsical scene tailored to character & beat
+  const handleSuggestScene = () => {
+    const suggestions = getSceneSuggestions(currentBeatIndex, characterName, signatureItem);
+    const nextIdx = (suggestionIndex + 1) % suggestions.length;
+    setSuggestionIndex(nextIdx);
+    setCustomIdea(suggestions[nextIdx]);
+  };
+
+  // Generate Page with Gemini AI (strictly attaching character visual memory)
   const handlePaintPage = async () => {
-    const chosenChoice = currentBeat.choices.find((c) => c.id === selectedChoiceId);
-    if (!chosenChoice && !customIdea.trim()) {
+    const scenePrompt = customIdea.trim();
+    if (!scenePrompt) {
       Alert.alert(
-        'Pick an Idea! ✨',
-        `Tap one of the 4 magical cards or type your own idea so ${characterName} can paint your page!`
+        'Describe Your Scene! ✨',
+        `Type what happens with ${characterName} in this scene, or tap "💡 Suggest a Scene" to get an idea!`
       );
       return;
     }
@@ -207,8 +178,7 @@ export default function StoryScreen({
       const textResult = await generateStoryPageContent({
         beatIndex: currentBeatIndex,
         character: activeCharacter,
-        childChoice: chosenChoice,
-        customInput: customIdea.trim(),
+        customInput: scenePrompt,
         apiKey: apiKey,
       });
 
@@ -217,7 +187,11 @@ export default function StoryScreen({
       let imgUri = null;
       if (apiKey) {
         try {
-          imgUri = await generateStoryPageImage(textResult.imagePrompt, apiKey);
+          imgUri = await generateStoryPageImage({
+            imagePrompt: textResult.imagePrompt,
+            character: activeCharacter,
+            apiKey: apiKey,
+          });
         } catch (e) {
           console.warn('Image generation fallback:', e);
         }
@@ -230,7 +204,7 @@ export default function StoryScreen({
       const newPage = {
         pageNumber: currentBeatIndex + 1,
         title: currentBeat.title,
-        choiceLabel: chosenChoice?.label || customIdea.trim(),
+        choiceLabel: scenePrompt,
         storyText: textResult.storyText,
         copilotReply: textResult.coPilotReply,
         imageUri: imgUri,
@@ -366,15 +340,12 @@ export default function StoryScreen({
             {/* BIG FRIENDLY QUESTION BUBBLE */}
             <Animated.View style={[styles.bubbleCard, { transform: [{ scale: bubbleScale }] }]}>
               <Text style={styles.bubbleQuestion}>{companionQuestion}</Text>
-              <TouchableOpacity style={styles.listenBtn} onPress={() => handleSpeak(companionQuestion)} activeOpacity={0.7}>
-                <Text style={styles.listenBtnText}>🔊 Read to Me</Text>
-              </TouchableOpacity>
               <View style={styles.bubbleArrow} />
             </Animated.View>
           </View>
 
-          {/* IF ALREADY PAINTED: SHOW BIG BEAUTIFUL PREVIEW CARD */}
-          {currentPageData && (
+          {/* SQUARE STORY ILLUSTRATION VIEWPORT */}
+          {currentPageData ? (
             <View style={styles.paintedCard}>
               <View style={styles.paintedImgWrap}>
                 <Image
@@ -393,93 +364,58 @@ export default function StoryScreen({
 
               <Text style={styles.paintedStoryText}>"{currentPageData.storyText}"</Text>
 
-              <View style={styles.paintedBtnRow}>
+              {currentBeatIndex < 5 && (
                 <TouchableOpacity
-                  style={styles.btnSpeakText}
-                  onPress={() => handleSpeak(currentPageData.storyText)}
-                  activeOpacity={0.7}
+                  style={styles.btnNextPage}
+                  onPress={() => setCurrentBeatIndex((prev) => Math.min(5, prev + 1))}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.btnSpeakTextLabel}>🔊 Listen</Text>
+                  <Text style={styles.btnNextPageText}>Next Page (P.{currentBeatIndex + 2}) ➜</Text>
                 </TouchableOpacity>
-
-                {currentBeatIndex < 5 && (
-                  <TouchableOpacity
-                    style={styles.btnNextPage}
-                    onPress={() => setCurrentBeatIndex((prev) => Math.min(5, prev + 1))}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.btnNextPageText}>Next Page (P.{currentBeatIndex + 2}) ➜</Text>
-                  </TouchableOpacity>
-                )}
+              )}
+            </View>
+          ) : (
+            /* DEDICATED SQUARE CANVAS PLACEHOLDER */
+            <View style={styles.emptyCanvasCard}>
+              <View style={styles.emptyCanvasDashed}>
+                <Text style={styles.emptyCanvasIcon}>🎨</Text>
+                <Text style={styles.emptyCanvasTitle}>Page {currentBeatIndex + 1} Canvas</Text>
+                <Text style={styles.emptyCanvasSubtitle}>
+                  Your square storybook illustration with {characterName} will appear here!
+                </Text>
               </View>
             </View>
           )}
 
-          {/* 4 BIG COLORFUL CHOICES (Super fun to tap!) */}
-          <View style={styles.choicesSection}>
-            <Text style={styles.sectionTitle}>
-              Pick what happens:
-            </Text>
-
-            <View style={styles.choiceGrid}>
-              {currentBeat.choices.map((choice) => {
-                const isSelected = selectedChoiceId === choice.id;
-                return (
-                  <TouchableOpacity
-                    key={choice.id}
-                    style={[
-                      styles.bigChoiceCard,
-                      { backgroundColor: choice.color, borderColor: isSelected ? '#2563EB' : choice.borderColor },
-                      isSelected && styles.bigChoiceCardSelected,
-                    ]}
-                    onPress={() => {
-                      setSelectedChoiceId(choice.id);
-                      setCustomIdea('');
-                    }}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.bigChoiceIcon}>{choice.icon}</Text>
-                    <Text style={[styles.bigChoiceLabel, isSelected && styles.bigChoiceLabelSelected]}>
-                      {choice.label}
-                    </Text>
-                    {isSelected && (
-                      <View style={styles.choiceCheckPill}>
-                        <Text style={styles.choiceCheckText}>✓ Picked</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
+          {/* DEDICATED SCENE INPUT & SUGGESTION SECTION */}
+          <View style={styles.sceneInputSection}>
+            <View style={styles.sceneInputHeader}>
+              <Text style={styles.sceneInputLabel}>
+                ✍️ What happens on Page {currentBeatIndex + 1}?
+              </Text>
+              <TouchableOpacity
+                style={styles.suggestBtn}
+                onPress={handleSuggestScene}
+                activeOpacity={0.75}
+              >
+                <Text style={styles.suggestBtnText}>💡 Suggest a Scene</Text>
+              </TouchableOpacity>
             </View>
 
-            {/* Simple toggle for custom twist */}
-            <TouchableOpacity
-              style={styles.customToggle}
-              onPress={() => setShowCustomBox(!showCustomBox)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.customToggleText}>
-                {showCustomBox ? '▲ Hide typing' : '✍️ Have your own idea? Tap here!'}
-              </Text>
-            </TouchableOpacity>
-
-            {showCustomBox && (
-              <View style={styles.customBox}>
-                <TextInput
-                  style={styles.customInput}
-                  placeholder={`Type your idea here...`}
-                  placeholderTextColor="#94A3B8"
-                  value={customIdea}
-                  onChangeText={(t) => {
-                    setCustomIdea(t);
-                    if (t.trim()) setSelectedChoiceId(null);
-                  }}
-                />
-              </View>
-            )}
+            <View style={styles.customBox}>
+              <TextInput
+                style={styles.customInput}
+                placeholder={`Describe what ${characterName} does in this scene (or tap Suggest a Scene)...`}
+                placeholderTextColor="#94A3B8"
+                value={customIdea}
+                onChangeText={setCustomIdea}
+                multiline
+                numberOfLines={3}
+              />
+            </View>
           </View>
 
-          {/* GIANT MAKE PAGE BUTTON */}
+          {/* GIANT MAKE / GENERATE PAGE BUTTON */}
           <TouchableOpacity
             style={[styles.bigActionBtn, isPainting && styles.bigActionBtnDisabled]}
             onPress={handlePaintPage}
@@ -494,8 +430,8 @@ export default function StoryScreen({
             ) : (
               <Text style={styles.bigActionBtnText}>
                 {currentPageData
-                  ? `✨ Re-paint Page ${currentBeatIndex + 1} ✨`
-                  : `✨ Make Page ${currentBeatIndex + 1} ✨`}
+                  ? `✨ Re-generate Page ${currentBeatIndex + 1} ✨`
+                  : `✨ Generate Page ${currentBeatIndex + 1} ✨`}
               </Text>
             )}
           </TouchableOpacity>
@@ -804,18 +740,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 6,
   },
-  listenBtn: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 9,
-    paddingVertical: 3,
-    borderRadius: 12,
-  },
-  listenBtnText: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    color: '#4F46E5',
-  },
   bubbleArrow: {
     position: 'absolute',
     left: -7,
@@ -830,10 +754,10 @@ const styles = StyleSheet.create({
     borderRightColor: '#F8FAFC',
   },
 
-  // PAINTED PAGE CARD
+  // PAINTED PAGE CARD (SQUARE VIEWPORT)
   paintedCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
+    borderRadius: 22,
     padding: 12,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
@@ -846,12 +770,12 @@ const styles = StyleSheet.create({
   },
   paintedImgWrap: {
     width: '100%',
-    height: 200,
-    borderRadius: 16,
+    aspectRatio: 1,
+    borderRadius: 18,
     overflow: 'hidden',
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#0F172A',
     position: 'relative',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   paintedImg: {
     width: '100%',
@@ -879,27 +803,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 10,
   },
-  paintedBtnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  btnSpeakText: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-  },
-  btnSpeakTextLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#4338CA',
-  },
   btnNextPage: {
     backgroundColor: '#10B981',
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 14,
+    alignSelf: 'flex-end',
   },
   btnNextPageText: {
     fontSize: 12,
@@ -907,93 +816,104 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // 4 BIG CHOICES SECTION
-  choicesSection: {
+  // DEDICATED SQUARE CANVAS PLACEHOLDER
+  emptyCanvasCard: {
+    width: '100%',
+    aspectRatio: 1,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    padding: 10,
     marginBottom: 14,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: '#0A1C3E',
-    marginBottom: 8,
-  },
-  choiceGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  bigChoiceCard: {
-    width: '48.5%',
-    borderRadius: 18,
-    paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderWidth: 2,
-    marginBottom: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 3,
+    shadowRadius: 6,
     elevation: 2,
   },
-  bigChoiceCardSelected: {
-    borderColor: '#2563EB',
-    transform: [{ scale: 1.04 }],
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+  emptyCanvasDashed: {
+    flex: 1,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#CBD5E1',
+    backgroundColor: '#F8FAFC',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
   },
-  bigChoiceIcon: {
-    fontSize: 32,
-    marginBottom: 6,
+  emptyCanvasIcon: {
+    fontSize: 48,
+    marginBottom: 8,
   },
-  bigChoiceLabel: {
-    fontSize: 13,
+  emptyCanvasTitle: {
+    fontSize: 16,
     fontWeight: '800',
     color: '#0F172A',
-    textAlign: 'center',
+    marginBottom: 4,
   },
-  bigChoiceLabelSelected: {
-    color: '#1D4ED8',
-  },
-  choiceCheckPill: {
-    marginTop: 4,
-    backgroundColor: '#2563EB',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  choiceCheckText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  customToggle: {
-    alignSelf: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-  },
-  customToggleText: {
+  emptyCanvasSubtitle: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#4F46E5',
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+
+  // DEDICATED SCENE INPUT & SUGGESTION SECTION
+  sceneInputSection: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 14,
+    borderWidth: 1.5,
+    borderColor: '#DBEAFE',
+    marginBottom: 14,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  sceneInputHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  sceneInputLabel: {
+    fontSize: 13.5,
+    fontWeight: '800',
+    color: '#0A1C3E',
+    flex: 1,
+    marginRight: 8,
+  },
+  suggestBtn: {
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#F59E0B',
+  },
+  suggestBtnText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#B45309',
   },
   customBox: {
-    marginTop: 6,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F8FAFC',
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#BFDBFE',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    borderColor: '#CBD5E1',
+    padding: 10,
   },
   customInput: {
-    fontSize: 13,
+    fontSize: 13.5,
     color: '#0F172A',
-    minHeight: 40,
+    fontWeight: '600',
+    minHeight: 64,
+    textAlignVertical: 'top',
   },
 
   // BIG ACTION BUTTON

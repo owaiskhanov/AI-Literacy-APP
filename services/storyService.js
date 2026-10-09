@@ -151,7 +151,63 @@ export const PRESET_STORY_PAGES = [
 ];
 
 /**
+ * 24 whimsical, beat-appropriate scene suggestions crafted around the child's hero
+ */
+export const SCENE_SUGGESTIONS = [
+  // Beat 1: The Secret Beginning (Page 1)
+  (name, item) => `${name} is waking up in a cozy starlight treehouse when an enchanted glowing letter flies through the window holding the ${item}!`,
+  (name, item) => `${name} steps through a hidden glowing portal behind a sparkling waterfall holding the ${item}!`,
+  (name, item) => `${name} climbs to the highest cloud tower to watch sunrise turn the sky into rainbow glitter!`,
+  (name, item) => `${name} sets out across the whispering crystal meadow with the ${item} glowing brightly!`,
+
+  // Beat 2: The Mysterious Discovery (Page 2)
+  (name, item) => `${name} uncovers a singing ancient treasure chest buried in soft violet moss!`,
+  (name, item) => `${name} notices their ${item} glowing brightly toward a golden map carved on a giant mushroom!`,
+  (name, item) => `${name} finds a baby starlight fairy who needs help finding its family constellation!`,
+  (name, item) => `${name} discovers a floating spiral staircase leading right into the starry aurora!`,
+
+  // Beat 3: Into The Unknown (Page 3)
+  (name, item) => `${name} soars across the cosmic sky riding a friendly cloud whale with sparkly fins!`,
+  (name, item) => `${name} slides down a giant rainbow waterfall into a glowing neon bubble lagoon!`,
+  (name, item) => `${name} hops across floating enchanted stepping stones above a sea of pink cotton candy clouds!`,
+  (name, item) => `${name} sails on a magical wooden ship through a tunnel of glowing starlight crystals!`,
+
+  // Beat 4: The Surprising Obstacle (Page 4)
+  (name, item) => `${name} meets a gentle giant moss golem who lost his favorite singing crystal!`,
+  (name, item) => `${name} encounters a mischievous storm cloud tickling everyone with candy raindrops!`,
+  (name, item) => `${name} faces a massive ancient musical gate locked with glowing puzzle runes!`,
+  (name, item) => `${name} gets lost in an enchanted mirror maze where playful reflections dance around!`,
+
+  // Beat 5: The Heroic Magic (Page 5)
+  (name, item) => `${name} holds up the ${item}, shining a brilliant beam of friendship that melts away the storm!`,
+  (name, item) => `${name} taps the ${item} against the musical gate, making it sing in golden harmony and swing open!`,
+  (name, item) => `${name} shares warm starlight hugs, turning the gloomy creature into a happy best friend!`,
+  (name, item) => `${name} activates the ${item}'s magic, creating a giant protective bubble of rainbow sparkles!`,
+
+  // Beat 6: The Grand Celebration (Page 6)
+  (name, item) => `${name} and all their magical friends celebrate with a giant star-pancake feast under fireworks!`,
+  (name, item) => `${name} curls up happily in a cozy hammock beneath the twinkling moonlight, dreaming of tomorrow!`,
+  (name, item) => `${name} is crowned guardian of the enchanted skies with a gleaming badge of bravery!`,
+  (name, item) => `${name} dances with friendly creatures around a warm campfire, laughing under the starlit sky!`,
+];
+
+/**
+ * Returns 4 whimsical scene suggestions for a given story beat
+ */
+export function getSceneSuggestions(beatIndex, characterName = 'Brave Companion', signatureItem = 'Star Crystal') {
+  const safeIdx = Math.max(0, Math.min(5, beatIndex || 0));
+  const baseOffset = safeIdx * 4;
+  const list = [];
+  for (let i = 0; i < 4; i++) {
+    const fn = SCENE_SUGGESTIONS[baseOffset + i];
+    if (fn) list.push(fn(characterName, signatureItem));
+  }
+  return list;
+}
+
+/**
  * Generates Co-Pilot dialogue, lyrical story sentence, and tailored image prompt using Gemini AI
+ * strictly anchoring the child's character visuals, traits, and signature item.
  */
 export async function generateStoryPageContent({
   beatIndex,
@@ -167,27 +223,30 @@ export async function generateStoryPageContent({
   const sigItem = character?.signatureItem || 'Star Crystal';
   const charDesc = character?.visualDescription || character?.imagePrompt || 'A mythical, cute 3D character';
   const traits = (character?.traits || ['Mythical', 'Brave']).join(', ');
+  const colors = (character?.merchandiseProfile?.colorPalette || []).join(', ');
 
   const chosenDetail = customInput.trim()
     ? customInput.trim()
-    : (childChoice?.label || 'A magical mystery') + ' — ' + (childChoice?.desc || '');
+    : (childChoice?.label || 'A magical mystery') + (childChoice?.desc ? ' — ' + childChoice.desc : '');
 
   const systemInstruction = `
 You are the interactive Storybook Co-Author and Co-Pilot for a child.
 The main character of this story is named: "${charName}".
-Character Visual Description: "${charDesc}".
-Character Traits: ${traits}.
-Signature Magical Item: "${sigItem}".
+CRITICAL CHARACTER VISUAL CONTINUITY:
+- Character Visual Description: "${charDesc}".
+- Personality Traits & Physical Features: ${traits}.
+- Signature Magical Item: "${sigItem}".
+${colors ? `- Characteristic Color Palette: ${colors}.` : ''}
 
 You are crafting Page ${beatIndex + 1} of 6 in a children's picture book.
 Narrative Beat: ${currentBeat.title} (${currentBeat.subtitle}).
-Child's Idea / Choice for this page: "${chosenDetail}".
+Child's Custom Scene Idea for this page: "${chosenDetail}".
 
 Respond ONLY with a valid JSON object matching this schema:
 {
-  "coPilotReply": "An excited, warm 1-2 sentence reaction spoken directly by ${charName} to the child celebrating their choice in first person (e.g., 'Oh wow! I love that idea! Let\\'s check behind the waterfall!')",
-  "storyText": "2 charming, lyrical picture-book sentences narrating this moment for a 6-10 year old reader in third-person picture book style.",
-  "imagePrompt": "A detailed 3D Pixar / DreamWorks cinematic illustration prompt showing ${charName} (${charDesc}) inside the scene: ${chosenDetail}. Vibrant colors, volumetric soft lighting, rich fairy-tale storybook aesthetic, whimsical composition, emotive character expression."
+  "coPilotReply": "An excited, warm 1-2 sentence reaction spoken directly by ${charName} to the child celebrating their scene idea in first person (e.g., 'Oh wow! I love that idea! Let\\'s explore together!')",
+  "storyText": "2 charming, lyrical picture-book sentences narrating this moment for a 6-10 year old reader in third-person picture book style featuring ${charName}.",
+  "imagePrompt": "A detailed 3D Pixar / DreamWorks cinematic illustration prompt showing ${charName} (${charDesc}, ${traits}, with ${sigItem}) inside the scene: ${chosenDetail}. Vibrant colors, volumetric soft lighting, rich fairy-tale storybook aesthetic, square 1:1 composition, whimsical mood."
 }
 No markdown wrappers, no formatting, raw JSON only.
 `;
@@ -196,9 +255,9 @@ No markdown wrappers, no formatting, raw JSON only.
     const fallback = PRESET_STORY_PAGES[beatIndex] || PRESET_STORY_PAGES[0];
     return {
       success: true,
-      coPilotReply: `${charName}: "I love choosing ${chosenDetail}! Let's make this page look magnificent!"`,
+      coPilotReply: `${charName}: "I love that idea! Let's make this page look magnificent!"`,
       storyText: fallback.text.replace('our brave friend', charName).replace('their enchanted signature item', `the ${sigItem}`),
-      imagePrompt: `3D Pixar style storybook illustration of ${charName} (${charDesc}) in ${chosenDetail}. Cinematic golden hour, storybook art.`,
+      imagePrompt: `Square 1:1 3D Pixar style storybook illustration of ${charName} (${charDesc}) in ${chosenDetail}. Cinematic golden hour, storybook art.`,
     };
   }
 
@@ -226,8 +285,8 @@ No markdown wrappers, no formatting, raw JSON only.
         return {
           success: true,
           coPilotReply: parsed.coPilotReply || `${charName}: "What a fantastic idea!"`,
-          storyText: parsed.storyText || 'And so their grand journey continued with wonder and joy.',
-          imagePrompt: parsed.imagePrompt || `3D Pixar style scene of ${charName} with ${chosenDetail}`,
+          storyText: parsed.storyText || `And so ${charName}'s grand journey continued with wonder and joy.`,
+          imagePrompt: parsed.imagePrompt || `Square 1:1 3D Pixar style scene of ${charName} with ${chosenDetail}`,
         };
       }
     } catch (err) {
@@ -240,20 +299,109 @@ No markdown wrappers, no formatting, raw JSON only.
     success: true,
     coPilotReply: `${charName}: "I love choosing ${chosenDetail}! Let's make this page look magnificent!"`,
     storyText: fallback.text.replace('our brave friend', charName).replace('their enchanted signature item', `the ${sigItem}`),
-    imagePrompt: `3D Pixar style storybook illustration of ${charName} (${charDesc}) in ${chosenDetail}.`,
+    imagePrompt: `Square 1:1 3D Pixar style storybook illustration of ${charName} (${charDesc}) in ${chosenDetail}.`,
   };
 }
 
 /**
- * Generates the full-scene picture book illustration using Gemini Image Generation
+ * Generates the full-scene picture book illustration using Gemini Image Generation.
+ * Strictly binds character identity, physical traits, signature item, and multimodal
+ * reference avatar into the generation request to ensure visual memory and continuity.
  */
-export async function generateStoryPageImage(imagePrompt, apiKey = null) {
+export async function generateStoryPageImage(imagePromptOrOptions, characterOrApiKey = null, maybeApiKey = null) {
+  let imagePrompt = '';
+  let character = null;
+  let apiKey = null;
+
+  if (imagePromptOrOptions && typeof imagePromptOrOptions === 'object') {
+    imagePrompt = imagePromptOrOptions.imagePrompt || '';
+    character = imagePromptOrOptions.character || null;
+    apiKey = imagePromptOrOptions.apiKey || null;
+  } else {
+    imagePrompt = String(imagePromptOrOptions || '');
+    if (characterOrApiKey && typeof characterOrApiKey === 'object') {
+      character = characterOrApiKey;
+      apiKey = maybeApiKey;
+    } else {
+      apiKey = characterOrApiKey;
+    }
+  }
+
   const activeKey = apiKey || getGeminiApiKey();
   if (!activeKey) return null;
 
-  const imageModels = ['gemini-3.1-flash-image', 'gemini-3-pro-image'];
-  const fullScenePrompt = `Full-bleed cinematic 3D storybook illustration, children's animated feature film still, Pixar / DreamWorks render quality. Highly detailed environment, expressive lighting, whimsical fantasy aesthetic. ${imagePrompt}`;
+  const charName = character?.name || 'Hero Companion';
+  const charDesc = character?.visualDescription || character?.imagePrompt || 'A mythical 3D character';
+  const traits = Array.isArray(character?.traits) ? character.traits.join(', ') : 'Brave, Enchanted';
+  const sigItem = character?.signatureItem || 'Star Crystal';
+  const colors = character?.merchandiseProfile?.colorPalette ? character.merchandiseProfile.colorPalette.join(', ') : '';
 
+  // Extract base64 avatar image reference if present for true multimodal conditioning
+  let base64Avatar = null;
+  let avatarMime = 'image/png';
+  const rawAvatar = character?.avatarUri || character?.imageUrl || character?.imageSrc || character?.avatar || '';
+  if (typeof rawAvatar === 'string' && rawAvatar.startsWith('data:')) {
+    const match = rawAvatar.match(/^data:(image\/[a-zA-Z0-9+.-]+);base64,(.+)$/);
+    if (match) {
+      avatarMime = match[1];
+      base64Avatar = match[2];
+    }
+  }
+
+  const characterAnchor = `
+CRITICAL CHARACTER VISUAL CONTINUITY:
+The hero in this illustration is named "${charName}".
+Exact Visual Design: ${charDesc}.
+Physical Traits: ${traits}.
+Signature Item: ${sigItem}.
+${colors ? `Color Palette: ${colors}.` : ''}
+${base64Avatar ? `IMPORTANT: The hero MUST look EXACTLY like the attached reference image of ${charName}. Maintain their exact species, facial features, colors, scales/fur, wings/horns, and Pixar 3D animated styling.` : `The hero must strictly match: ${charDesc}.`}
+`;
+
+  const fullScenePrompt = `Square 1:1 picture book illustration, full-bleed cinematic 3D children's animated feature film still, Pixar / DreamWorks render quality. Highly detailed environment, expressive lighting, whimsical fantasy aesthetic. ${characterAnchor} In this scene: ${imagePrompt}. No borders, no multiple panels, single square scene.`;
+
+  const imageModels = ['gemini-3.1-flash-image', 'gemini-3-pro-image'];
+
+  // Try multimodal call first if base64 avatar reference is available
+  if (base64Avatar) {
+    for (const model of imageModels) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    inlineData: {
+                      mimeType: avatarMime,
+                      data: base64Avatar,
+                    },
+                  },
+                  { text: fullScenePrompt },
+                ],
+              },
+            ],
+            generationConfig: { responseModalities: ['IMAGE'] },
+          }),
+        });
+
+        if (!res.ok) continue;
+        const data = await res.json();
+        const part = data?.candidates?.[0]?.content?.parts?.[0];
+        if (part && part.inlineData?.data) {
+          return `data:${part.inlineData.mimeType || 'image/jpeg'};base64,${part.inlineData.data}`;
+        }
+      } catch (err) {
+        console.warn(`Multimodal story image gen error on ${model}:`, err.message);
+      }
+    }
+  }
+
+  // Text-anchored fallback across models
   for (const model of imageModels) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${activeKey}`;
@@ -278,3 +426,4 @@ export async function generateStoryPageImage(imagePrompt, apiKey = null) {
   }
   return null;
 }
+
