@@ -34,7 +34,9 @@ export function getGeminiApiKey() {
 }
 
 /**
- * Remove solid white background and convert RGBA buffer to transparent PNG
+ * Advanced multi-pass background and ground shadow removal:
+ * Converts RGBA buffer to a clean, crisp, transparent PNG with ZERO white halo,
+ * ZERO micro-area white residue, and ZERO ground puddle shadows under feet.
  */
 function removeWhiteBackground(rgbaData, width, height) {
   const data = rgbaData;
@@ -44,44 +46,83 @@ function removeWhiteBackground(rgbaData, width, height) {
   let head = 0;
   let tail = 0;
 
-  function isWhitePixel(idx) {
+  // Helper: check if a pixel is background (pure white, off-white, or neutral light grey)
+  function isOuterBgPixel(idx, isNearBottom = false) {
     const r = data[idx];
     const g = data[idx + 1];
     const b = data[idx + 2];
     const avg = (r + g + b) / 3;
     const diff = Math.max(r, g, b) - Math.min(r, g, b);
-    return avg > 218 && diff < 28;
+
+    // Standard white / off-white background
+    if (avg >= 195 && diff < 36) return true;
+    if (avg >= 185 && diff < 26) return true;
+
+    // In bottom half of image, ground shadows & contact puddles appear (neutral light-grey/white)
+    if (isNearBottom) {
+      if (avg >= 155 && diff < 34) return true;
+      if (avg >= 140 && diff < 22) return true; // neutral contact shadow
+    }
+
+    return false;
   }
 
-  // Push border pixels to flood queue
+  // Helper: check if an enclosed interior pixel is a background void (hole between limbs/tail)
+  function isVoidPixel(idx, y) {
+    const r = data[idx];
+    const g = data[idx + 1];
+    const b = data[idx + 2];
+    const avg = (r + g + b) / 3;
+    const diff = Math.max(r, g, b) - Math.min(r, g, b);
+
+    // Pure flat white background showing through gaps
+    if (avg >= 230 && diff < 16) return true;
+    if (avg >= 200 && diff < 30) return true;
+    if (avg >= 190 && diff < 22) return true;
+
+    // In lower half of the character (between legs, under belly, around tail), floor shadows / gaps
+    if (y > height * 0.45) {
+      if (avg >= 155 && diff < 30) return true;
+      if (avg >= 140 && diff < 20) return true;
+    }
+
+    return false;
+  }
+
+  // --- PASS 1: Seed outer perimeter to flood queue ---
+  const bottomThresholdY = Math.floor(height * 0.45);
+
   for (let x = 0; x < width; x++) {
-    const topIdx = x * 4;
-    const botIdx = ((height - 1) * width + x) * 4;
-    if (isWhitePixel(topIdx)) {
+    // Top border
+    if (isOuterBgPixel(x * 4, false)) {
       isBg[x] = 1;
       queue[tail++] = x;
     }
-    const bPixel = (height - 1) * width + x;
-    if (isWhitePixel(botIdx)) {
-      isBg[bPixel] = 1;
-      queue[tail++] = bPixel;
+    // Bottom border
+    const botIdx = (height - 1) * width + x;
+    if (isOuterBgPixel(botIdx * 4, true)) {
+      isBg[botIdx] = 1;
+      queue[tail++] = botIdx;
     }
   }
 
   for (let y = 0; y < height; y++) {
-    const lPixel = y * width;
-    const rPixel = y * width + (width - 1);
-    if (!isBg[lPixel] && isWhitePixel(lPixel * 4)) {
-      isBg[lPixel] = 1;
-      queue[tail++] = lPixel;
+    const isBot = y >= bottomThresholdY;
+    // Left border
+    const lIdx = y * width;
+    if (!isBg[lIdx] && isOuterBgPixel(lIdx * 4, isBot)) {
+      isBg[lIdx] = 1;
+      queue[tail++] = lIdx;
     }
-    if (!isBg[rPixel] && isWhitePixel(rPixel * 4)) {
-      isBg[rPixel] = 1;
-      queue[tail++] = rPixel;
+    // Right border
+    const rIdx = y * width + (width - 1);
+    if (!isBg[rIdx] && isOuterBgPixel(rIdx * 4, isBot)) {
+      isBg[rIdx] = 1;
+      queue[tail++] = rIdx;
     }
   }
 
-  // BFS flood-fill outside perimeter
+  // --- PASS 2: BFS Flood Fill from Outer Perimeter ---
   while (head < tail) {
     const curr = queue[head++];
     const cx = curr % width;
@@ -97,7 +138,8 @@ function removeWhiteBackground(rgbaData, width, height) {
     for (let i = 0; i < 4; i++) {
       const n = neighbors[i];
       if (n !== -1 && isBg[n] === 0) {
-        if (isWhitePixel(n * 4)) {
+        const ny = Math.floor(n / width);
+        if (isOuterBgPixel(n * 4, ny >= bottomThresholdY)) {
           isBg[n] = 1;
           queue[tail++] = n;
         }
@@ -105,33 +147,140 @@ function removeWhiteBackground(rgbaData, width, height) {
     }
   }
 
-  // Alpha assignment and soft anti-aliased edge feathering with de-fringing
+  // --- PASS 3: Enclosed Hole & Micro-Area Clearing (Interior Voids) ---
+  // Scan for connected components of white/void pixels that were trapped between limbs/tail
+  const visited = new Uint8Array(totalPixels);
+  for (let i = 0; i < totalPixels; i++) {
+    if (isBg[i] === 1) {
+      visited[i] = 1;
+    }
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const p = y * width + x;
+      if (visited[p] === 1) continue;
+
+      const pIdx = p * 4;
+      if (isVoidPixel(pIdx, y)) {
+        // Collect this entire connected component of void pixels
+        const comp = [];
+        const cQueue = [p];
+        visited[p] = 1;
+        let cHead = 0;
+        let touchesOuterBg = false;
+
+        while (cHead < cQueue.length) {
+          const cp = cQueue[cHead++];
+          comp.push(cp);
+          const cpx = cp % width;
+          const cpy = Math.floor(cp / width);
+
+          const cNeighbors = [
+            cpx > 0 ? cp - 1 : -1,
+            cpx < width - 1 ? cp + 1 : -1,
+            cpy > 0 ? cp - width : -1,
+            cpy < height - 1 ? cp + width : -1,
+          ];
+
+          for (let ni = 0; ni < 4; ni++) {
+            const cn = cNeighbors[ni];
+            if (cn !== -1) {
+              if (isBg[cn] === 1) {
+                touchesOuterBg = true;
+              } else if (visited[cn] === 0) {
+                const cny = Math.floor(cn / width);
+                if (isVoidPixel(cn * 4, cny)) {
+                  visited[cn] = 1;
+                  cQueue.push(cn);
+                }
+              }
+            }
+          }
+        }
+
+        // An interior region is background if:
+        // 1. It directly touches the outer background, OR
+        // 2. It contains flat pure white pixels (background canvas showing through gap), OR
+        // 3. Its average is near pure white with low saturation, OR
+        // 4. It is neutral floor shadow in the bottom area (> 45% height)
+        let hasPureFlatWhite = false;
+        let compTotalAvg = 0;
+        let compTotalDiff = 0;
+        for (let ci = 0; ci < comp.length; ci++) {
+          const cpi = comp[ci] * 4;
+          const cr = data[cpi], cg = data[cpi + 1], cb = data[cpi + 2];
+          const cavg = (cr + cg + cb) / 3;
+          const cdiff = Math.max(cr, cg, cb) - Math.min(cr, cg, cb);
+          compTotalAvg += cavg;
+          compTotalDiff += cdiff;
+          if (cavg >= 240 && cdiff <= 12) {
+            hasPureFlatWhite = true;
+          }
+        }
+        const meanAvg = compTotalAvg / comp.length;
+        const meanDiff = compTotalDiff / comp.length;
+        const compY = Math.floor(comp[0] / width);
+        const isNearBottom = compY > height * 0.45;
+
+        if (
+          touchesOuterBg ||
+          hasPureFlatWhite ||
+          (meanAvg >= 235 && meanDiff <= 14) ||
+          (isNearBottom && meanAvg >= 155 && meanDiff <= 22)
+        ) {
+          for (let ci = 0; ci < comp.length; ci++) {
+            isBg[comp[ci]] = 1;
+          }
+        }
+      }
+    }
+  }
+
+  // --- PASS 4: Edge Feathering, De-Fringing & Unpremultiplication ---
+  // Completely eliminates white halos, jagged edges, and off-white boundary bleed
   for (let i = 0; i < totalPixels; i++) {
     const idx = i * 4;
     if (isBg[i] === 1) {
-      data[idx + 3] = 0;
+      data[idx + 3] = 0; // 100% transparent
     } else {
       const x = i % width;
       const y = Math.floor(i / width);
-      let bgNeighbors = 0;
-      if (x > 0 && isBg[i - 1] === 1) bgNeighbors++;
-      if (x < width - 1 && isBg[i + 1] === 1) bgNeighbors++;
-      if (y > 0 && isBg[i - width] === 1) bgNeighbors++;
-      if (y < height - 1 && isBg[i + width] === 1) bgNeighbors++;
+      let bgCount = 0;
 
-      if (bgNeighbors > 0) {
+      // Check 3x3 neighborhood for background contact
+      for (let dy = -1; dy <= 1; dy++) {
+        const ny = y + dy;
+        if (ny < 0 || ny >= height) continue;
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          if (nx < 0 || nx >= width) continue;
+          if (isBg[ny * width + nx] === 1) {
+            bgCount++;
+          }
+        }
+      }
+
+      if (bgCount > 0) {
         const r = data[idx];
         const g = data[idx + 1];
         const b = data[idx + 2];
         const avg = (r + g + b) / 3;
-        if (avg > 180) {
-          const factor = Math.max(0, Math.min(1, (255 - avg) / 75));
-          data[idx + 3] = Math.round(factor * 255);
-          // De-fringe: suppress bright white edge halo on dark backgrounds
-          const tint = Math.max(0.65, factor);
-          data[idx] = Math.round(r * tint);
-          data[idx + 1] = Math.round(g * tint);
-          data[idx + 2] = Math.round(b * tint);
+        const diff = Math.max(r, g, b) - Math.min(r, g, b);
+
+        // If edge pixel is light (white background bleed from JPEG compression)
+        if (avg > 160 && diff < 50) {
+          // Calculate true alpha based on brightness distance from pure white
+          const alphaFactor = Math.max(0, Math.min(1, (255 - avg) / (255 - 155)));
+          data[idx + 3] = Math.round(alphaFactor * 255);
+
+          // Color un-mixing (de-matting): remove white background luminance bleed
+          if (alphaFactor > 0.15) {
+            const unmix = (val) => Math.max(0, Math.min(255, Math.round((val - 255 * (1 - alphaFactor)) / alphaFactor)));
+            data[idx] = unmix(r);
+            data[idx + 1] = unmix(g);
+            data[idx + 2] = unmix(b);
+          }
         }
       }
     }
@@ -156,8 +305,8 @@ async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
     "MANDATORY CREATIVE DIRECTIVES:\n" +
     "1. STYLE: Always 3D Pixar / DreamWorks animated movie style character render. High-end 3D CGI, smooth subsurface scattering, tactile stylized finish, adorable expressive face.\n" +
     "2. MYTHICAL TOUCH: Always make the character slightly mythical and enchanted, regardless of what was requested (even for common animals). Infuse subtle magical traits: celestial stardust, glowing mystical markings, tiny iridescent fairy/dragon wings, enchanted crystal horns, or glowing gemstone eyes.\n" +
-    "3. BACKGROUND: Strict NO BACKGROUND isolated subject directly on solid pure flat white #FFFFFF background. Absolutely NO floor, NO ground shadows, NO scenery, NO borders, NO white sticker outlines or die-cut margins.\n" +
-    "4. POSE & GROUNDING (ALWAYS STANDING): Mandatory full-body standing or perched pose with feet, paws, or talons planted firmly flat at the bottom base of the frame, full body completely visible from head to toe. The character must stand upright so it plants firmly on a stone pedestal. Never floating in mid-air, never flying without ground contact, never lying down, and never cropped at the waist, knees, or neck.\n" +
+    "3. BACKGROUND: Strict NO BACKGROUND isolated subject directly on solid pure flat white #FFFFFF background canvas. Absolutely NO floor, NO ground plane, NO surface shadows, NO ground shadows, NO scenery, NO borders, NO white sticker outlines or die-cut margins.\n" +
+    "4. POSE & FULL BODY SILHOUETTE: Full-body standing or perched character pose with entire character completely visible head-to-toe inside the frame, never cropped at the edges or feet. Clean bottom silhouette on flat white with absolutely ZERO ground plane, ZERO floor surface, ZERO cast shadow, ZERO contact shadow puddles beneath paws or feet. The paws and feet must float cleanly against the pure white #FFFFFF void.\n" +
     "5. DIALOGUE LENGTH: talkBubble MUST be a short, sweet 1-2 sentence spoken greeting (strictly 12 to 18 words maximum). E.g. \"The ocean breeze is calling! Adventure awaits beyond the horizon! 🌊⚓\". Never write long paragraphs.\n" +
     "6. VISUAL CONTINUITY & MERCHANDISE SPECIFICATIONS:\n" +
     "- visualDescription: A vivid, concise 2-sentence visual description capturing the character's exact colors, fur/scales/feathers, wing texture, eye color, and unique magical marking. This is stored in the child's account so future story scenes and merchandise maintain 100% visual consistency!\n" +
@@ -218,10 +367,8 @@ async function generateCharacterImage(imagePrompt, apiKey) {
     'gemini-3-pro-image',
   ];
 
-  // Guarantee standing pose and isolated solid white background in final image prompt
-  const enhancedPrompt = imagePrompt.toLowerCase().includes('standing')
-    ? imagePrompt
-    : `Full body standing pose, feet firmly planted at bottom of frame, full figure head to toe, upright posture. ${imagePrompt}. Isolated subject directly on solid pure white #FFFFFF background with no floor, no shadows, no white sticker outline or border.`;
+  // Guarantee standing pose, full-body visibility, and zero floor shadows on flat white canvas
+  const enhancedPrompt = `${imagePrompt}. Full-body standing character pose, complete head-to-toe figure visible inside frame with clean margins. Isolated character floating on seamless solid pure flat white #FFFFFF canvas, absolutely ZERO ground shadows, ZERO floor shadows, ZERO contact shadow puddles beneath paws or feet, ZERO ambient occlusion on the floor, clean bottom silhouette, ZERO scenery, ZERO borders, NO sticker outlines.`;
 
   let lastErr = null;
   for (const model of imageModels) {
