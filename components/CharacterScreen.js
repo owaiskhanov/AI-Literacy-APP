@@ -84,10 +84,9 @@ export default function CharacterScreen({ onBack, onComplete }) {
   // Gemini API Key Modal
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [hasApiKey, setHasApiKey] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(true);
 
   // Animations
-  const floatAnim = useRef(new Animated.Value(0)).current;
   const bubbleScale = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const pulseAnim = useRef(new Animated.Value(0.7)).current;
@@ -156,7 +155,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
   };
 
   useEffect(() => {
-    // Check initial API key
+    // Check initial API key (always connected by default)
     const existingKey = getGeminiApiKey();
     if (existingKey) {
       setHasApiKey(true);
@@ -168,22 +167,6 @@ export default function CharacterScreen({ onBack, onComplete }) {
       duration: 600,
       useNativeDriver: true,
     }).start();
-
-    // Subtle idle floating
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(floatAnim, {
-          toValue: -6,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
-        Animated.timing(floatAnim, {
-          toValue: 0,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
 
     // Summoning aura pulse
     Animated.loop(
@@ -399,7 +382,6 @@ export default function CharacterScreen({ onBack, onComplete }) {
               {
                 bottom: characterBottom,
                 opacity: fadeAnim,
-                transform: [{ translateY: floatAnim }],
               },
             ]}
           >

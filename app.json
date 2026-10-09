@@ -47,7 +47,8 @@
     "extra": {
       "eas": {
         "projectId": "a9550ba4-b6c5-40fb-83fb-86754bf04750"
-      }
+      },
+      "geminiApiKey": "AQ.Ab8RN6K3JqGnId3q5NVKXEzuoRq0sk6WxuEKMSApd-FQ6kjLkQ"
     },
     "owner": "owaiskhanov"
   }
