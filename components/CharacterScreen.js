@@ -108,6 +108,7 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
   // Account Saving & Confirmation State
   const [saveModalVisible, setSaveModalVisible] = useState(false);
   const [savedCharacter, setSavedCharacter] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Gemini API Key Modal
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
@@ -316,35 +317,47 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
   };
 
   const handleNext = () => {
-    if (!characterImageUri && !characterName) {
-      Alert.alert(
-        'Summon Your Character First ✨',
-        'Please describe and summon your magical companion in the box below before moving to the next adventure!'
-      );
-      return;
+    let finalAvatar = characterImageUri;
+    let finalName = characterName;
+    let finalTalk = talkBubble;
+    let finalTraits = characterTraits;
+    let finalItem = signatureItem;
+    let finalDesc = visualDescription;
+
+    // If character not summoned yet, fallback gracefully to default enchanted companion
+    if (!finalAvatar) {
+      finalAvatar = Image.resolveAssetSource(require('../assets/characters/fox.png'))?.uri || 'fox.png';
+      finalName = 'Brave Kitsune';
+      finalTalk = 'The ocean breeze is calling! Adventure awaits beyond the horizon! 🌊⚓';
+      finalTraits = ['Mythical', 'Brave', 'Kind'];
+      finalItem = 'Star Crystal';
+      finalDesc = 'A 3D Pixar-style mythical golden fox with celestial markings, gentle white tail tip, and enchanted crystal wings standing upright on a stone pedestal.';
+      setCharacterImageUri(finalAvatar);
+      setCharacterName(finalName);
+      setTalkBubble(finalTalk);
+      setCharacterTraits(finalTraits);
+      setSignatureItem(finalItem);
+      setVisualDescription(finalDesc);
     }
 
     const payload = {
-      name: characterName || 'Enchanted Companion',
-      avatarUri: characterImageUri,
-      talkBubble: talkBubble,
-      visualDescription: visualDescription || lastImagePrompt || prompt,
+      name: finalName || 'Enchanted Companion',
+      avatarUri: finalAvatar,
+      talkBubble: finalTalk,
+      visualDescription: finalDesc || lastImagePrompt || prompt,
       imagePrompt: lastImagePrompt || prompt,
       originalPrompt: prompt,
-      traits: characterTraits,
-      signatureItem: signatureItem,
+      traits: finalTraits,
+      signatureItem: finalItem,
       storyRole: 'Hero Companion & Protagonist',
     };
 
     const finalized = saveCharacterToAccount(userInfo, payload, storyName);
     setSavedCharacter(finalized);
+    setIsSaved(true);
     setSaveModalVisible(true);
-  };
-
-  const handleConfirmNext = () => {
-    setSaveModalVisible(false);
-    if (onComplete && savedCharacter) {
-      onComplete(savedCharacter);
+    if (onComplete) {
+      onComplete(finalized);
     }
   };
 
@@ -402,23 +415,25 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
             <TouchableOpacity
               style={[
                 styles.nextButtonPill,
-                characterImageUri ? styles.nextButtonPillActive : styles.nextButtonPillMuted,
+                isSaved ? styles.nextButtonPillSaved : styles.nextButtonPillActive,
               ]}
               onPress={handleNext}
               activeOpacity={0.8}
             >
-              <Text style={[styles.nextButtonText, characterImageUri ? styles.nextButtonTextActive : null]}>
-                Next
+              <Text style={[styles.nextButtonText, isSaved ? styles.nextButtonTextSaved : styles.nextButtonTextActive]}>
+                {isSaved ? 'Saved! ✓' : 'Next'}
               </Text>
-              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M5 12h14M12 5l7 7-7 7"
-                  stroke={characterImageUri ? '#0A1C3E' : '#71829B'}
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </Svg>
+              {!isSaved && (
+                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M5 12h14M12 5l7 7-7 7"
+                    stroke="#0A1C3E"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </Svg>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -530,13 +545,13 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
             {/* Quick Finalize & Save Call-to-Action when Character is Present */}
             {characterImageUri ? (
               <TouchableOpacity
-                style={styles.floatingKeepButton}
+                style={[styles.floatingKeepButton, isSaved ? styles.floatingKeepButtonSaved : null]}
                 onPress={handleNext}
                 activeOpacity={0.85}
               >
                 <DualSparkles color="#FFFFFF" secondaryColor="#FDE68A" />
                 <Text style={styles.floatingKeepButtonText}>
-                  Keep {characterName || 'My Character'} & Next ➜
+                  {isSaved ? 'Character Saved to Account! ✓' : `Keep ${characterName || 'My Character'} & Next ➜`}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -706,10 +721,10 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
 
                 <TouchableOpacity
                   style={styles.continueButton}
-                  onPress={handleConfirmNext}
+                  onPress={() => setSaveModalVisible(false)}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.continueButtonText}>Continue to Screen 4 🚀</Text>
+                  <Text style={styles.continueButtonText}>Saved & Ready! ✨</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -1126,6 +1141,12 @@ const styles = StyleSheet.create({
     shadowColor: '#F59E0B',
     shadowOpacity: 0.35,
   },
+  nextButtonPillSaved: {
+    backgroundColor: '#10B981',
+    borderColor: '#059669',
+    shadowColor: '#10B981',
+    shadowOpacity: 0.35,
+  },
   nextButtonPillMuted: {
     backgroundColor: 'rgba(255, 255, 255, 0.75)',
     borderColor: 'rgba(215, 195, 170, 0.5)',
@@ -1137,6 +1158,9 @@ const styles = StyleSheet.create({
   },
   nextButtonTextActive: {
     color: '#0A1C3E',
+  },
+  nextButtonTextSaved: {
+    color: '#FFFFFF',
   },
   floatingKeepButton: {
     flexDirection: 'row',
@@ -1156,6 +1180,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 6,
+  },
+  floatingKeepButtonSaved: {
+    backgroundColor: '#059669',
+    borderColor: '#34D399',
+    shadowColor: '#059669',
   },
   floatingKeepButtonText: {
     color: '#FFFFFF',

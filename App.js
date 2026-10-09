@@ -20,7 +20,6 @@ import BrandLogo from './components/BrandLogo';
 import WelcomeBack from './components/WelcomeBack';
 import UserNameScreen from './components/UserNameScreen';
 import CharacterScreen from './components/CharacterScreen';
-import StoryAdventureScreen from './components/StoryAdventureScreen';
 import { getActiveCharacter } from './services/characterStorage';
 
 // Complete auth session if redirected back to web browser
@@ -128,30 +127,6 @@ export default function App() {
   const baseBottom = Platform.OS === 'ios' ? 36 : 48;
   const buttonBottom = baseBottom + height * 0.17;
 
-  // Page Four: Story Adventure & Merchandise Hub
-  if (step === 4) {
-    return (
-      <StoryAdventureScreen
-        character={activeCharacter || getActiveCharacter(userInfo, storyName)}
-        userInfo={userInfo}
-        storyName={storyName}
-        onBack={() => setStep(3)}
-        onNavigateStory={(questTitle) => {
-          Alert.alert(
-            'Story Chapter Unlocked! 📖',
-            `Embarking on "${questTitle}" with ${activeCharacter?.name || 'your companion'}!\n\nTheir visual DNA is locked for seamless story illustrations.`
-          );
-        }}
-        onNavigateMerch={() => {
-          Alert.alert(
-            'Merchandise Studio 👕',
-            `Custom stickers, apparel, and storybooks for ${activeCharacter?.name || 'your companion'} are ready!`
-          );
-        }}
-      />
-    );
-  }
-
   // Page Three: Character Generation Page
   if (step === 3) {
     return (
@@ -161,7 +136,6 @@ export default function App() {
         onBack={() => setStep(2)}
         onComplete={(characterData) => {
           setActiveCharacter(characterData);
-          setStep(4);
         }}
       />
     );
