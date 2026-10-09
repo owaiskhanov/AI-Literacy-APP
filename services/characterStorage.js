@@ -217,3 +217,68 @@ export function formatMerchandiseSpecs(character, productType = 'sticker') {
       };
   }
 }
+
+const STORIES_STORAGE_KEY_PREFIX = 'AI_LITERACY_ACCOUNT_STORIES_';
+const inMemoryAccountStories = new Map();
+
+/**
+ * Saves a completed or in-progress 6-page storybook to the child's account
+ */
+export function saveStoryToAccount(user, storyData, storyName = '') {
+  const userId = getCanonicalUserId(user, storyName);
+  const now = new Date().toISOString();
+  const storyId = storyData.id || `story_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+  const finalizedStory = {
+    ...storyData,
+    id: storyId,
+    userId,
+    updatedAt: now,
+    createdAt: storyData.createdAt || now,
+  };
+
+  if (!inMemoryAccountStories.has(userId)) {
+    inMemoryAccountStories.set(userId, []);
+  }
+  const userStories = inMemoryAccountStories.get(userId);
+  const existingIdx = userStories.findIndex((s) => s.id === storyId);
+  if (existingIdx >= 0) {
+    userStories[existingIdx] = finalizedStory;
+  } else {
+    userStories.unshift(finalizedStory);
+  }
+
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      window.localStorage.setItem(
+        `${STORIES_STORAGE_KEY_PREFIX}${userId}`,
+        JSON.stringify(userStories)
+      );
+    } catch (e) {
+      console.warn('Could not save story to localStorage:', e);
+    }
+  }
+
+  return finalizedStory;
+}
+
+/**
+ * Gets all saved stories for a user
+ */
+export function getStoriesFromAccount(user, storyName = '') {
+  const userId = getCanonicalUserId(user, storyName);
+  if (inMemoryAccountStories.has(userId)) {
+    return inMemoryAccountStories.get(userId);
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const saved = window.localStorage.getItem(`${STORIES_STORAGE_KEY_PREFIX}${userId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        inMemoryAccountStories.set(userId, parsed);
+        return parsed;
+      }
+    } catch (e) {}
+  }
+  return [];
+}

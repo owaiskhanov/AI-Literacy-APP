@@ -114,7 +114,14 @@ function SubtleBackGlow({ size = 160 }) {
   );
 }
 
-export default function ProjectsScreen({ onBack, userInfo, storyName, activeCharacter }) {
+export default function ProjectsScreen({
+  onBack,
+  userInfo,
+  storyName,
+  activeCharacter,
+  onStartStory,
+  onSelectProject,
+}) {
   const { width, height } = useWindowDimensions();
   const [selectedProject, setSelectedProject] = useState(null);
 
@@ -210,10 +217,22 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
 
   const handleStartProject = () => {
     if (selectedProject) {
+      const proj = selectedProject;
+      setSelectedProject(null);
+      if (proj.id === 'story') {
+        if (onStartStory) {
+          onStartStory();
+          return;
+        }
+      }
+      if (onSelectProject) {
+        onSelectProject(proj);
+        return;
+      }
       Alert.alert(
         'Studio Ready! 🚀',
-        `Launching ${selectedProject.title} starring ${characterName}!`,
-        [{ text: 'Great!', onPress: () => setSelectedProject(null) }]
+        `Launching ${proj.title} starring ${characterName}!`,
+        [{ text: 'Great!' }]
       );
     }
   };

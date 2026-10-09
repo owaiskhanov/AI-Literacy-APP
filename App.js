@@ -21,6 +21,7 @@ import WelcomeBack from './components/WelcomeBack';
 import UserNameScreen from './components/UserNameScreen';
 import CharacterScreen from './components/CharacterScreen';
 import ProjectsScreen from './components/ProjectsScreen';
+import StoryScreen from './components/StoryScreen';
 import { getActiveCharacter } from './services/characterStorage';
 
 // Complete auth session if redirected back to web browser
@@ -132,6 +133,22 @@ export default function App() {
   const baseBottom = Platform.OS === 'ios' ? 36 : 48;
   const buttonBottom = baseBottom + height * 0.17;
 
+  // Page Five: Make a Story Screen
+  if (step === 5) {
+    return (
+      <StoryScreen
+        userInfo={userInfo}
+        storyName={storyName}
+        activeCharacter={activeCharacter}
+        onBack={() => setStep(4)}
+        onGoToMerch={() => {
+          Alert.alert('Merchandise Studio 👕', 'Preparing merchandise mockups for your storybook!');
+          setStep(4);
+        }}
+      />
+    );
+  }
+
   // Page Four: Projects Screen
   if (step === 4) {
     return (
@@ -140,6 +157,7 @@ export default function App() {
         storyName={storyName}
         activeCharacter={activeCharacter}
         onBack={() => setStep(3)}
+        onStartStory={() => setStep(5)}
       />
     );
   }
