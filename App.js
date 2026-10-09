@@ -20,6 +20,7 @@ import BrandLogo from './components/BrandLogo';
 import WelcomeBack from './components/WelcomeBack';
 import UserNameScreen from './components/UserNameScreen';
 import CharacterScreen from './components/CharacterScreen';
+import ProjectsScreen from './components/ProjectsScreen';
 import { getActiveCharacter } from './services/characterStorage';
 
 // Complete auth session if redirected back to web browser
@@ -127,6 +128,18 @@ export default function App() {
   const baseBottom = Platform.OS === 'ios' ? 36 : 48;
   const buttonBottom = baseBottom + height * 0.17;
 
+  // Page Four: Projects Screen
+  if (step === 4) {
+    return (
+      <ProjectsScreen
+        userInfo={userInfo}
+        storyName={storyName}
+        activeCharacter={activeCharacter}
+        onBack={() => setStep(3)}
+      />
+    );
+  }
+
   // Page Three: Character Generation Page
   if (step === 3) {
     return (
@@ -136,6 +149,7 @@ export default function App() {
         onBack={() => setStep(2)}
         onComplete={(characterData) => {
           setActiveCharacter(characterData);
+          setStep(4);
         }}
       />
     );

@@ -356,8 +356,12 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
     setSavedCharacter(finalized);
     setIsSaved(true);
     setSaveModalVisible(true);
+  };
+
+  const handleProceedToProjects = () => {
+    setSaveModalVisible(false);
     if (onComplete) {
-      onComplete(finalized);
+      onComplete(savedCharacter);
     }
   };
 
@@ -721,10 +725,10 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
 
                 <TouchableOpacity
                   style={styles.continueButton}
-                  onPress={() => setSaveModalVisible(false)}
+                  onPress={handleProceedToProjects}
                   activeOpacity={0.85}
                 >
-                  <Text style={styles.continueButtonText}>Saved & Ready! ✨</Text>
+                  <Text style={styles.continueButtonText}>Continue to Projects 🚀</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
