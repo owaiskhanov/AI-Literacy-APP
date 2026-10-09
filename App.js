@@ -71,8 +71,20 @@ export default function App() {
   const [fontsLoaded] = useFonts({
     Inter_500Medium,
     Inter_800ExtraBold,
-    Sacramento_400Regular: require('@expo-google-fonts/sacramento/400Regular/Sacramento_400Regular.ttf'),
   });
+
+  // Inject Sacramento cursive font cleanly on Web without blocking
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      if (!document.getElementById('sacramento-font-link')) {
+        const link = document.createElement('link');
+        link.id = 'sacramento-font-link';
+        link.rel = 'stylesheet';
+        link.href = 'https://fonts.googleapis.com/css2?family=Sacramento&display=swap';
+        document.head.appendChild(link);
+      }
+    }
+  }, []);
 
   // Hook into Google OAuth Request
   const [request, response, promptAsync] = Google.useAuthRequest({
@@ -202,24 +214,22 @@ export default function App() {
         style={styles.backgroundImage}
         resizeMode="cover"
       >
-        {fontsLoaded && (
-          <View
-            style={[
-              styles.brand,
-              {
-                top: height * BRAND_TOP,
-                ...(BRAND_CENTER
-                  ? { left: 0, right: 0, alignItems: 'center' }
-                  : { left: BRAND_LEFT_PX + width * BRAND_LEFT_EXTRA }),
-              },
-            ]}
-          >
-            <BrandLogo />
-          </View>
-        )}
+        <View
+          style={[
+            styles.brand,
+            {
+              top: height * BRAND_TOP,
+              ...(BRAND_CENTER
+                ? { left: 0, right: 0, alignItems: 'center' }
+                : { left: BRAND_LEFT_PX + width * BRAND_LEFT_EXTRA }),
+            },
+          ]}
+        >
+          <BrandLogo />
+        </View>
 
         <View style={[styles.buttonContainer, { bottom: buttonBottom }]}>
-          {fontsLoaded && <WelcomeBack />}
+          <WelcomeBack />
           <TouchableOpacity
             style={styles.loginButton}
             activeOpacity={0.88}

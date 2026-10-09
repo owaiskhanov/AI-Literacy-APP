@@ -27,19 +27,88 @@ import {
 import { saveStoryToAccount } from '../services/characterStorage';
 import { getGeminiApiKey } from '../services/geminiService';
 
-function SubtleBackGlow({ size = 160 }) {
+// Kid-friendly simplified questions and punchy choices
+const KID_FRIENDLY_BEATS = [
+  {
+    step: 1,
+    title: 'Where do we start?',
+    question: (name) => `Where should our adventure start, storyteller?`,
+    choices: [
+      { id: 'castle', icon: '🏰', label: 'Cloud Castle', color: '#EFF6FF', borderColor: '#93C5FD' },
+      { id: 'treehouse', icon: '🌳', label: 'Magic Treehouse', color: '#ECFDF5', borderColor: '#6EE7B7' },
+      { id: 'lagoon', icon: '🌊', label: 'Rainbow Lagoon', color: '#F0FDFA', borderColor: '#5EEAD4' },
+      { id: 'bedroom', icon: '⭐', label: 'Starry Bedroom', color: '#FEF3C7', borderColor: '#FCD34D' },
+    ],
+  },
+  {
+    step: 2,
+    title: 'What did we find?',
+    question: (name) => `Look! What mystery clue did we just find?!`,
+    choices: [
+      { id: 'map', icon: '🗺️', label: 'Golden Map', color: '#FEF3C7', borderColor: '#FCD34D' },
+      { id: 'key', icon: '🗝️', label: 'Singing Key', color: '#EFF6FF', borderColor: '#93C5FD' },
+      { id: 'egg', icon: '🥚', label: 'Dragon Egg', color: '#FDF2F8', borderColor: '#F472B6' },
+      { id: 'letter', icon: '📜', label: 'Flying Letter', color: '#F5F3FF', borderColor: '#C4B5FD' },
+    ],
+  },
+  {
+    step: 3,
+    title: 'Where are we traveling?',
+    question: (name) => `Hold on! Where are we flying next?!`,
+    choices: [
+      { id: 'bridge', icon: '🌈', label: 'Rainbow Bridge', color: '#FDF2F8', borderColor: '#F472B6' },
+      { id: 'ship', icon: '⛵', label: 'Cloud Ship', color: '#EFF6FF', borderColor: '#93C5FD' },
+      { id: 'caves', icon: '💎', label: 'Crystal Caves', color: '#F0FDFA', borderColor: '#5EEAD4' },
+      { id: 'mushrooms', icon: '🍄', label: 'Giant Forest', color: '#ECFDF5', borderColor: '#6EE7B7' },
+    ],
+  },
+  {
+    step: 4,
+    title: 'What is blocking our path?',
+    question: (name) => `Uh oh! Look ahead... what is blocking us?!`,
+    choices: [
+      { id: 'yeti', icon: '🐻', label: 'Sleepy Giant', color: '#FEF3C7', borderColor: '#FCD34D' },
+      { id: 'monkeys', icon: '🐒', label: 'Silly Monkeys', color: '#ECFDF5', borderColor: '#6EE7B7' },
+      { id: 'storm', icon: '☁️', label: 'Candy Storm', color: '#FDF2F8', borderColor: '#F472B6' },
+      { id: 'gate', icon: '🚪', label: 'Musical Gate', color: '#EFF6FF', borderColor: '#93C5FD' },
+    ],
+  },
+  {
+    step: 5,
+    title: 'How do we save the day?',
+    question: (name, item) => `Quick! How do we use my ${item || 'magic'}?`,
+    choices: [
+      { id: 'beam', icon: '✨', label: 'Warm Glow', color: '#FEF3C7', borderColor: '#FCD34D' },
+      { id: 'music', icon: '🎶', label: 'Sweet Song', color: '#F5F3FF', borderColor: '#C4B5FD' },
+      { id: 'bubbles', icon: '💫', label: 'Magic Bubbles', color: '#EFF6FF', borderColor: '#93C5FD' },
+      { id: 'kindness', icon: '💖', label: 'Friendship Hug', color: '#FDF2F8', borderColor: '#F472B6' },
+    ],
+  },
+  {
+    step: 6,
+    title: 'How do we celebrate?',
+    question: (name) => `Hooray! How should our story finish?!`,
+    choices: [
+      { id: 'fireworks', icon: '🎆', label: 'Fireworks Party', color: '#F5F3FF', borderColor: '#C4B5FD' },
+      { id: 'pancakes', icon: '🥞', label: 'Giant Pancakes', color: '#FEF3C7', borderColor: '#FCD34D' },
+      { id: 'trophy', icon: '🏆', label: 'Golden Badges', color: '#FEF3C7', borderColor: '#F59E0B' },
+      { id: 'campfire', icon: '⛺', label: 'Cozy Campfire', color: '#ECFDF5', borderColor: '#6EE7B7' },
+    ],
+  },
+];
+
+function GentleGlow({ size = 120 }) {
   return (
-    <View style={[styles.subtleBackGlow, { width: size, height: size }]}>
+    <View style={[styles.gentleGlow, { width: size, height: size }]}>
       <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <Defs>
-          <RadialGradient id="storyGlowGrad" cx="50%" cy="50%" rx="50%" ry="50%">
-            <Stop offset="0%" stopColor="#FFF8DC" stopOpacity="0.45" />
-            <Stop offset="45%" stopColor="#FDE68A" stopOpacity="0.25" />
-            <Stop offset="80%" stopColor="#93C5FD" stopOpacity="0.08" />
-            <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          <RadialGradient id="glowG" cx="50%" cy="50%" rx="50%" ry="50%">
+            <Stop offset="0%" stopColor="#FFF8DC" stopOpacity="0.5" />
+            <Stop offset="50%" stopColor="#FDE68A" stopOpacity="0.25" />
+            <Stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
           </RadialGradient>
         </Defs>
-        <Rect x="0" y="0" width={size} height={size} fill="url(#storyGlowGrad)" />
+        <Rect x="0" y="0" width={size} height={size} fill="url(#glowG)" />
       </Svg>
     </View>
   );
@@ -55,607 +124,492 @@ export default function StoryScreen({
   const { width, height } = useWindowDimensions();
 
   // Character Dossier
-  const characterName = activeCharacter?.name || 'Brave Friend';
+  const characterName = activeCharacter?.name || 'Brave Kitsune';
   const characterAvatar = activeCharacter?.avatarUri || activeCharacter?.imageUrl;
   const signatureItem = activeCharacter?.signatureItem || 'Star Crystal';
-  const childAuthor = userInfo?.name || storyName || 'Young Author';
+  const childAuthor = userInfo?.name || storyName || 'Explorer';
 
-  // State
+  // Navigation & Page State
   const [currentBeatIndex, setCurrentBeatIndex] = useState(0);
-  const [selectedOptionId, setSelectedOptionId] = useState(null);
-  const [customInput, setCustomInput] = useState('');
-  const [showCustomInput, setShowCustomInput] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState('');
-  const [readerModalVisible, setReaderModalVisible] = useState(false);
-  const [readerPageIndex, setReaderPageIndex] = useState(0);
+  const [selectedChoiceId, setSelectedChoiceId] = useState(null);
+  const [customIdea, setCustomIdea] = useState('');
+  const [showCustomBox, setShowCustomBox] = useState(false);
+  const [isPainting, setIsPainting] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
 
-  // 6 Story Pages (starts with initial empty slots, auto-populates as child guides story)
-  const [storyPages, setStoryPages] = useState(() => {
-    return Array(6).fill(null);
-  });
+  // Reader Modal
+  const [readerOpen, setReaderOpen] = useState(false);
+  const [readerPage, setReaderPage] = useState(0);
 
-  // Current Co-Pilot Dialogue
-  const [coPilotSpeech, setCoPilotSpeech] = useState(() => {
-    return STORY_BEATS[0].question(characterName, signatureItem);
-  });
+  // 6 Story Pages
+  const [pages, setPages] = useState(() => Array(6).fill(null));
 
-  // Animations
+  // Companion Animation
+  const avatarBounce = useRef(new Animated.Value(0)).current;
   const bubbleScale = useRef(new Animated.Value(1)).current;
-  const charBounce = useRef(new Animated.Value(0)).current;
-  const starSpin = useRef(new Animated.Value(0)).current;
-  const contentFade = useRef(new Animated.Value(1)).current;
 
-  const currentBeat = STORY_BEATS[currentBeatIndex] || STORY_BEATS[0];
+  const currentBeat = KID_FRIENDLY_BEATS[currentBeatIndex];
+  const currentPageData = pages[currentBeatIndex];
 
-  // Co-Pilot gentle breathing / hover animation
+  // Gentle floating companion
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(charBounce, {
-          toValue: -6,
-          duration: 1500,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(charBounce, {
-          toValue: 0,
-          duration: 1500,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
+        Animated.timing(avatarBounce, { toValue: -6, duration: 1200, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(avatarBounce, { toValue: 0, duration: 1200, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       ])
     );
     loop.start();
     return () => loop.stop();
   }, []);
 
-  // Update Co-Pilot speech when beat changes
+  // Update beat
   useEffect(() => {
-    const existing = storyPages[currentBeatIndex];
-    if (existing && existing.coPilotReply) {
-      setCoPilotSpeech(existing.coPilotReply);
-    } else {
-      setCoPilotSpeech(currentBeat.question(characterName, signatureItem));
-    }
-    setSelectedOptionId(null);
-    setCustomInput('');
-    setShowCustomInput(false);
+    setSelectedChoiceId(null);
+    setCustomIdea('');
+    setShowCustomBox(false);
 
-    // Pop bubble smoothly
     Animated.sequence([
-      Animated.timing(bubbleScale, { toValue: 0.92, duration: 120, useNativeDriver: true }),
+      Animated.timing(bubbleScale, { toValue: 0.9, duration: 100, useNativeDriver: true }),
       Animated.spring(bubbleScale, { toValue: 1, friction: 5, tension: 70, useNativeDriver: true }),
     ]).start();
   }, [currentBeatIndex]);
 
-  // Read aloud helper (supports Web SpeechSynthesis)
-  const handleReadAloud = (textToRead) => {
+  // Read aloud helper
+  const handleSpeak = (text) => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(textToRead);
-      utterance.rate = 0.95;
-      utterance.pitch = 1.15;
-      window.speechSynthesis.speak(utterance);
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      u.pitch = 1.15;
+      window.speechSynthesis.speak(u);
     } else {
-      Alert.alert('Story Voice 🎙️', textToRead);
+      Alert.alert('Story Speaker 🔊', text);
     }
   };
 
-  // Generate Current Page
-  const handleGeneratePage = async () => {
-    const chosenOption = currentBeat.options.find((o) => o.id === selectedOptionId);
-    if (!chosenOption && !customInput.trim()) {
+  // Paint Page with AI
+  const handlePaintPage = async () => {
+    const chosenChoice = currentBeat.choices.find((c) => c.id === selectedChoiceId);
+    if (!chosenChoice && !customIdea.trim()) {
       Alert.alert(
-        'Pick An Idea! ✨',
-        `${characterName} is waiting for your choice! Tap an option above or type your own magical idea!`
+        'Pick an Idea! ✨',
+        `Tap one of the 4 magical cards or type your own idea so ${characterName} can paint your page!`
       );
       return;
     }
 
-    setLoading(true);
-    setLoadingStep(`Writing Page ${currentBeatIndex + 1} with ${characterName}...`);
+    setIsPainting(true);
+    setLoadingText(`Painting Page ${currentBeatIndex + 1} with fairy dust...`);
 
     try {
       const apiKey = getGeminiApiKey();
-
-      // 1. Generate Lyrical Story Text & Co-Pilot Dialogue
       const textResult = await generateStoryPageContent({
         beatIndex: currentBeatIndex,
         character: activeCharacter,
-        childChoice: chosenOption,
-        customInput: customInput.trim(),
+        childChoice: chosenChoice,
+        customInput: customIdea.trim(),
         apiKey: apiKey,
       });
 
-      setLoadingStep(`Painting Page ${currentBeatIndex + 1} illustration...`);
+      setLoadingText(`Creating 3D picture...`);
 
-      // 2. Generate Full Scene Illustration
-      let imageUri = null;
+      let imgUri = null;
       if (apiKey) {
         try {
-          imageUri = await generateStoryPageImage(textResult.imagePrompt, apiKey);
-        } catch (imgErr) {
-          console.warn('Image generation fallback:', imgErr);
+          imgUri = await generateStoryPageImage(textResult.imagePrompt, apiKey);
+        } catch (e) {
+          console.warn('Image generation fallback:', e);
         }
       }
 
-      // Fallback charming card illustration if image generation not configured/errored
-      if (!imageUri) {
-        const fallbackCard = PRESET_STORY_PAGES[currentBeatIndex]?.imageUri || 'card_story.jpg';
-        imageUri = fallbackCard;
+      if (!imgUri) {
+        imgUri = PRESET_STORY_PAGES[currentBeatIndex]?.imageUri || 'card_story.jpg';
       }
 
       const newPage = {
-        beatIndex: currentBeatIndex,
         pageNumber: currentBeatIndex + 1,
         title: currentBeat.title,
-        subtitle: currentBeat.subtitle,
-        choiceLabel: chosenOption?.label || customInput.trim(),
-        coPilotReply: textResult.coPilotReply,
+        choiceLabel: chosenChoice?.label || customIdea.trim(),
         storyText: textResult.storyText,
-        imageUri: imageUri,
-        imagePrompt: textResult.imagePrompt,
+        copilotReply: textResult.coPilotReply,
+        imageUri: imgUri,
       };
 
-      const updatedPages = [...storyPages];
-      updatedPages[currentBeatIndex] = newPage;
-      setStoryPages(updatedPages);
-      setCoPilotSpeech(textResult.coPilotReply);
+      const updated = [...pages];
+      updated[currentBeatIndex] = newPage;
+      setPages(updated);
 
-      // Save story to account
+      // Save to account
       saveStoryToAccount(
         userInfo,
         {
           id: `story_${characterName.replace(/\s+/g, '_')}`,
-          title: `The Legend of ${characterName}`,
+          title: `The Tale of ${characterName}`,
           author: childAuthor,
           characterName: characterName,
           characterAvatar: characterAvatar,
           signatureItem: signatureItem,
-          pages: updatedPages.filter(Boolean),
-          isComplete: updatedPages.filter(Boolean).length === 6,
+          pages: updated.filter(Boolean),
+          isComplete: updated.filter(Boolean).length === 6,
         },
         storyName
       );
 
-      setLoading(false);
+      setIsPainting(false);
 
-      // If finished page 6, celebrate and prompt reader
       if (currentBeatIndex === 5) {
         Alert.alert(
-          '🎉 Story Completed!!',
-          `Congratulations ${childAuthor}! You and ${characterName} completed all 6 pages of your storybook!`,
+          '🎉 You Did It!!',
+          `You and ${characterName} completed all 6 pages of your storybook!`,
           [
-            { text: 'Read Storybook Now 📖', onPress: () => setReaderModalVisible(true) },
+            { text: 'Read Storybook Now 📖', onPress: () => { setReaderPage(0); setReaderOpen(true); } },
             { text: 'Awesome!', style: 'cancel' },
-          ]
-        );
-      } else {
-        // Automatically suggest advancing to next beat
-        Alert.alert(
-          `Page ${currentBeatIndex + 1} Painted! 🎨`,
-          `"${textResult.storyText.slice(0, 75)}..."`,
-          [
-            {
-              text: `Next Page (${currentBeatIndex + 2}/6) ➜`,
-              onPress: () => setCurrentBeatIndex((prev) => Math.min(prev + 1, 5)),
-            },
-            { text: 'Stay Here', style: 'cancel' },
           ]
         );
       }
     } catch (err) {
-      setLoading(false);
-      Alert.alert('Story Error', err.message || 'Unable to paint story page. Please try again.');
+      setIsPainting(false);
+      Alert.alert('Story Paint', 'Page saved! Let\'s keep creating!');
     }
   };
 
-  const completedPagesCount = storyPages.filter(Boolean).length;
-  const currentPageData = storyPages[currentBeatIndex];
+  const completedCount = pages.filter(Boolean).length;
+  const companionQuestion = currentPageData?.copilotReply || currentBeat.question(characterName, signatureItem);
 
   return (
     <View style={styles.container}>
-      <StatusBar style="dark" />
+      <StatusBar style="dark" translucent />
       <ImageBackground
         source={require('../assets/page4ProjectsBg.png')}
         style={styles.bgImage}
         resizeMode="cover"
       >
-        <View style={styles.darkBackdropOverlay} />
+        <View style={styles.whiteOverlay} />
 
         {/* TOP BAR */}
-        <View style={styles.headerBar}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={onBack}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.backButtonArrow}>‹</Text>
-            <Text style={styles.backButtonText}>Projects</Text>
+        <View style={styles.topBar}>
+          <TouchableOpacity style={styles.backBtn} onPress={onBack} activeOpacity={0.8}>
+            <Text style={styles.backBtnText}>‹ Projects</Text>
           </TouchableOpacity>
 
           <View style={styles.titleBadge}>
-            <Text style={styles.titleBadgeEmoji}>📖</Text>
             <Text style={styles.titleBadgeText} numberOfLines={1}>
-              {characterName}'s Story
+              🏰 {characterName}'s Story
             </Text>
           </View>
 
-          {completedPagesCount > 0 && (
+          {completedCount > 0 ? (
             <TouchableOpacity
-              style={styles.readBookHeaderBtn}
-              onPress={() => setReaderModalVisible(true)}
+              style={styles.readHeaderBtn}
+              onPress={() => { setReaderPage(0); setReaderOpen(true); }}
               activeOpacity={0.8}
             >
-              <Text style={styles.readBookHeaderText}>Read Book ({completedPagesCount}/6)</Text>
+              <Text style={styles.readHeaderText}>Read ({completedCount}/6) 📖</Text>
             </TouchableOpacity>
+          ) : (
+            <View style={{ width: 80 }} />
           )}
         </View>
 
-        {/* 6-BEAT PROGRESS RAIL */}
-        <View style={styles.progressRailContainer}>
-          <View style={styles.progressRailInner}>
-            {STORY_BEATS.map((beat, idx) => {
-              const isCompleted = Boolean(storyPages[idx]);
-              const isActive = idx === currentBeatIndex;
-              return (
-                <TouchableOpacity
-                  key={beat.id}
-                  style={[
-                    styles.progressGem,
-                    isActive && styles.progressGemActive,
-                    isCompleted && styles.progressGemCompleted,
-                  ]}
-                  onPress={() => setCurrentBeatIndex(idx)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.progressGemText, isActive && styles.progressGemTextActive]}>
-                    {isCompleted ? '✓' : idx + 1}
-                  </Text>
-                  <Text style={styles.progressGemLabel}>Page {idx + 1}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+        {/* 6 STAR STEPPERS ACROSS TOP (Super simple for kids) */}
+        <View style={styles.starStepperRow}>
+          {KID_FRIENDLY_BEATS.map((beat, idx) => {
+            const isDone = Boolean(pages[idx]);
+            const isCurrent = idx === currentBeatIndex;
+            return (
+              <TouchableOpacity
+                key={beat.step}
+                style={[
+                  styles.starStep,
+                  isCurrent && styles.starStepCurrent,
+                  isDone && styles.starStepDone,
+                ]}
+                onPress={() => setCurrentBeatIndex(idx)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.starStepIcon}>
+                  {isDone ? '✓' : isCurrent ? '⭐' : idx + 1}
+                </Text>
+                <Text style={[styles.starStepText, isCurrent && styles.starStepTextCurrent]}>
+                  P.{idx + 1}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
-        {/* MAIN INTERACTIVE SCROLL */}
-        <ScrollView
-          style={styles.scrollArea}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* CO-PILOT CHARACTER DOCK (Talking Stage) */}
-          <View style={styles.coPilotStage}>
-            {/* Character Avatar with subtle floating bounce */}
-            <Animated.View
-              style={[
-                styles.coPilotAvatarWrap,
-                { transform: [{ translateY: charBounce }] },
-              ]}
-            >
-              <SubtleBackGlow size={130} />
+        {/* MAIN KID CONTENT SCROLL */}
+        <ScrollView style={styles.mainScroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* CUTE TALKING COMPANION STAGE */}
+          <View style={styles.companionDock}>
+            <Animated.View style={[styles.companionAvatarWrap, { transform: [{ translateY: avatarBounce }] }]}>
+              <GentleGlow size={110} />
               {characterAvatar ? (
                 <Image
                   source={
-                    typeof characterAvatar === 'string' &&
-                    (characterAvatar.startsWith('http') || characterAvatar.startsWith('data:'))
+                    typeof characterAvatar === 'string' && (characterAvatar.startsWith('http') || characterAvatar.startsWith('data:'))
                       ? { uri: characterAvatar }
                       : require('../assets/characters/fox.png')
                   }
-                  style={styles.coPilotAvatarImg}
+                  style={styles.companionImg}
                   resizeMode="contain"
                 />
               ) : (
-                <Image
-                  source={require('../assets/characters/fox.png')}
-                  style={styles.coPilotAvatarImg}
-                  resizeMode="contain"
-                />
+                <Image source={require('../assets/characters/fox.png')} style={styles.companionImg} resizeMode="contain" />
               )}
-              <View style={styles.coPilotNameTag}>
-                <Text style={styles.coPilotNameTagText} numberOfLines={1}>
-                  {characterName}
-                </Text>
+              <View style={styles.companionPill}>
+                <Text style={styles.companionPillText}>{characterName}</Text>
               </View>
             </Animated.View>
 
-            {/* Speaking Speech Bubble */}
-            <Animated.View
-              style={[
-                styles.speechBubbleCard,
-                { transform: [{ scale: bubbleScale }] },
-              ]}
-            >
-              <View style={styles.speechBubbleHeader}>
-                <Text style={styles.speechBubbleAuthor}>Co-Author Guide 🎙️</Text>
-                <TouchableOpacity
-                  style={styles.btnListen}
-                  onPress={() => handleReadAloud(coPilotSpeech)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.btnListenText}>🔊 Listen</Text>
-                </TouchableOpacity>
-              </View>
-
-              <Text style={styles.speechBubbleText}>{coPilotSpeech}</Text>
-
-              <View style={styles.speechBubbleTail} />
+            {/* BIG FRIENDLY QUESTION BUBBLE */}
+            <Animated.View style={[styles.bubbleCard, { transform: [{ scale: bubbleScale }] }]}>
+              <Text style={styles.bubbleQuestion}>{companionQuestion}</Text>
+              <TouchableOpacity style={styles.listenBtn} onPress={() => handleSpeak(companionQuestion)} activeOpacity={0.7}>
+                <Text style={styles.listenBtnText}>🔊 Read to Me</Text>
+              </TouchableOpacity>
+              <View style={styles.bubbleArrow} />
             </Animated.View>
           </View>
 
-          {/* CURRENT BEAT HEADER */}
-          <View style={styles.beatHeaderWrap}>
-            <View style={styles.beatBadge}>
-              <Text style={styles.beatBadgeText}>BEAT {currentBeatIndex + 1} OF 6</Text>
-            </View>
-            <Text style={styles.beatTitle}>{currentBeat.title}</Text>
-            <Text style={styles.beatSubtitle}>{currentBeat.subtitle}</Text>
-          </View>
-
-          {/* CURRENT PAGE PREVIEW (If already generated) */}
+          {/* IF ALREADY PAINTED: SHOW BIG BEAUTIFUL PREVIEW CARD */}
           {currentPageData && (
-            <View style={styles.pagePreviewCard}>
-              <View style={styles.pagePreviewHeader}>
-                <Text style={styles.pagePreviewTitle}>🎨 Page {currentBeatIndex + 1} Illustrated</Text>
-                <TouchableOpacity
-                  onPress={() => handleReadAloud(currentPageData.storyText)}
-                  style={styles.btnListenSmall}
-                >
-                  <Text style={styles.btnListenSmallText}>🔊 Read Text</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.pagePreviewImageWrap}>
+            <View style={styles.paintedCard}>
+              <View style={styles.paintedImgWrap}>
                 <Image
                   source={
                     currentPageData.imageUri && currentPageData.imageUri.startsWith('data:')
                       ? { uri: currentPageData.imageUri }
                       : require('../assets/cards/card_story.jpg')
                   }
-                  style={styles.pagePreviewImage}
+                  style={styles.paintedImg}
                   resizeMode="cover"
                 />
+                <View style={styles.paintedBadge}>
+                  <Text style={styles.paintedBadgeText}>Page {currentBeatIndex + 1} of 6 ✨</Text>
+                </View>
               </View>
 
-              <Text style={styles.pagePreviewStoryText}>"{currentPageData.storyText}"</Text>
+              <Text style={styles.paintedStoryText}>"{currentPageData.storyText}"</Text>
+
+              <View style={styles.paintedBtnRow}>
+                <TouchableOpacity
+                  style={styles.btnSpeakText}
+                  onPress={() => handleSpeak(currentPageData.storyText)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.btnSpeakTextLabel}>🔊 Listen</Text>
+                </TouchableOpacity>
+
+                {currentBeatIndex < 5 && (
+                  <TouchableOpacity
+                    style={styles.btnNextPage}
+                    onPress={() => setCurrentBeatIndex((prev) => Math.min(5, prev + 1))}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={styles.btnNextPageText}>Next Page (P.{currentBeatIndex + 2}) ➜</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           )}
 
-          {/* GUIDED CHOICE BUBBLES (Option B) */}
+          {/* 4 BIG COLORFUL CHOICES (Super fun to tap!) */}
           <View style={styles.choicesSection}>
-            <Text style={styles.choicesSectionHeader}>
-              ✨ Pick an idea with {characterName}:
+            <Text style={styles.sectionTitle}>
+              Pick what happens:
             </Text>
 
             <View style={styles.choiceGrid}>
-              {currentBeat.options.map((option) => {
-                const isSelected = selectedOptionId === option.id;
+              {currentBeat.choices.map((choice) => {
+                const isSelected = selectedChoiceId === choice.id;
                 return (
                   <TouchableOpacity
-                    key={option.id}
+                    key={choice.id}
                     style={[
-                      styles.choiceCard,
-                      isSelected && styles.choiceCardSelected,
+                      styles.bigChoiceCard,
+                      { backgroundColor: choice.color, borderColor: isSelected ? '#2563EB' : choice.borderColor },
+                      isSelected && styles.bigChoiceCardSelected,
                     ]}
                     onPress={() => {
-                      setSelectedOptionId(option.id);
-                      setCustomInput('');
+                      setSelectedChoiceId(choice.id);
+                      setCustomIdea('');
                     }}
                     activeOpacity={0.8}
                   >
-                    <View style={styles.choiceCardTop}>
-                      <Text style={styles.choiceCardIcon}>{option.icon}</Text>
-                      {isSelected && (
-                        <View style={styles.selectedCheckBadge}>
-                          <Text style={styles.selectedCheckText}>✓</Text>
-                        </View>
-                      )}
-                    </View>
-                    <Text style={[styles.choiceCardLabel, isSelected && styles.choiceCardLabelSelected]}>
-                      {option.label}
+                    <Text style={styles.bigChoiceIcon}>{choice.icon}</Text>
+                    <Text style={[styles.bigChoiceLabel, isSelected && styles.bigChoiceLabelSelected]}>
+                      {choice.label}
                     </Text>
-                    <Text style={styles.choiceCardDesc} numberOfLines={2}>
-                      {option.desc}
-                    </Text>
+                    {isSelected && (
+                      <View style={styles.choiceCheckPill}>
+                        <Text style={styles.choiceCheckText}>✓ Picked</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 );
               })}
             </View>
 
-            {/* Custom Input Toggle */}
+            {/* Simple toggle for custom twist */}
             <TouchableOpacity
-              style={styles.toggleCustomBtn}
-              onPress={() => setShowCustomInput(!showCustomInput)}
+              style={styles.customToggle}
+              onPress={() => setShowCustomBox(!showCustomBox)}
               activeOpacity={0.7}
             >
-              <Text style={styles.toggleCustomText}>
-                {showCustomInput ? '▲ Hide Custom Idea' : '✍️ Have your own magic twist? Type it here!'}
+              <Text style={styles.customToggleText}>
+                {showCustomBox ? '▲ Hide typing' : '✍️ Have your own idea? Tap here!'}
               </Text>
             </TouchableOpacity>
 
-            {showCustomInput && (
-              <View style={styles.customInputContainer}>
+            {showCustomBox && (
+              <View style={styles.customBox}>
                 <TextInput
-                  style={styles.customTextInput}
-                  placeholder={`e.g. ${characterName} flies high into a rainbow doughnut cloud...`}
+                  style={styles.customInput}
+                  placeholder={`Type your idea here...`}
                   placeholderTextColor="#94A3B8"
-                  value={customInput}
-                  onChangeText={(text) => {
-                    setCustomInput(text);
-                    if (text.trim()) setSelectedOptionId(null);
+                  value={customIdea}
+                  onChangeText={(t) => {
+                    setCustomIdea(t);
+                    if (t.trim()) setSelectedChoiceId(null);
                   }}
-                  multiline
                 />
               </View>
             )}
           </View>
 
-          {/* ACTION BUTTON: PAINT THIS PAGE */}
-          <View style={styles.actionSection}>
+          {/* GIANT MAKE PAGE BUTTON */}
+          <TouchableOpacity
+            style={[styles.bigActionBtn, isPainting && styles.bigActionBtnDisabled]}
+            onPress={handlePaintPage}
+            disabled={isPainting}
+            activeOpacity={0.85}
+          >
+            {isPainting ? (
+              <View style={styles.btnLoadingRow}>
+                <ActivityIndicator color="#FFFFFF" size="small" />
+                <Text style={styles.btnLoadingText}>{loadingText}</Text>
+              </View>
+            ) : (
+              <Text style={styles.bigActionBtnText}>
+                {currentPageData
+                  ? `✨ Re-paint Page ${currentBeatIndex + 1} ✨`
+                  : `✨ Make Page ${currentBeatIndex + 1} ✨`}
+              </Text>
+            )}
+          </TouchableOpacity>
+
+          {/* READ FULL BOOK BUTTON (WHEN COMPLETED) */}
+          {completedCount === 6 && (
             <TouchableOpacity
-              style={[
-                styles.paintPageBtn,
-                loading && styles.paintPageBtnDisabled,
-              ]}
-              onPress={handleGeneratePage}
-              disabled={loading}
+              style={styles.celebrationReadBtn}
+              onPress={() => { setReaderPage(0); setReaderOpen(true); }}
               activeOpacity={0.85}
             >
-              {loading ? (
-                <View style={styles.loadingRow}>
-                  <ActivityIndicator color="#FFFFFF" size="small" />
-                  <Text style={styles.loadingBtnText}>{loadingStep}</Text>
-                </View>
-              ) : (
-                <View style={styles.paintBtnContent}>
-                  <Text style={styles.paintBtnEmoji}>🎨</Text>
-                  <Text style={styles.paintBtnText}>
-                    {currentPageData
-                      ? `Re-paint Page ${currentBeatIndex + 1} with AI`
-                      : `Paint Page ${currentBeatIndex + 1} with AI ✨`}
-                  </Text>
-                </View>
-              )}
+              <Text style={styles.celebrationReadBtnText}>
+                🎉 Read Finished Storybook! (6/6) 📖
+              </Text>
             </TouchableOpacity>
-
-            {completedPagesCount === 6 && (
-              <TouchableOpacity
-                style={styles.openBookFullBtn}
-                onPress={() => setReaderModalVisible(true)}
-                activeOpacity={0.85}
-              >
-                <Text style={styles.openBookFullText}>📖 Read Complete Storybook (6/6)</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+          )}
 
           <View style={{ height: 40 }} />
         </ScrollView>
 
-        {/* INTERACTIVE STORYBOOK READER MODAL */}
+        {/* FULL SCREEN STORYBOOK READER MODAL */}
         <Modal
-          visible={readerModalVisible}
+          visible={readerOpen}
           animationType="slide"
           transparent={false}
-          onRequestClose={() => setReaderModalVisible(false)}
+          onRequestClose={() => setReaderOpen(false)}
         >
-          <View style={styles.readerModalContainer}>
+          <View style={styles.readerModal}>
             <StatusBar style="light" />
 
-            {/* Reader Header */}
-            <View style={styles.readerHeader}>
-              <TouchableOpacity
-                style={styles.readerCloseBtn}
-                onPress={() => setReaderModalVisible(false)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.readerCloseBtnText}>✕ Close</Text>
+            {/* Reader Top */}
+            <View style={styles.readerTop}>
+              <TouchableOpacity style={styles.readerClose} onPress={() => setReaderOpen(false)}>
+                <Text style={styles.readerCloseText}>✕ Close</Text>
               </TouchableOpacity>
-
-              <Text style={styles.readerHeaderTitle} numberOfLines={1}>
+              <Text style={styles.readerBookTitle} numberOfLines={1}>
                 The Tale of {characterName}
               </Text>
-
               <TouchableOpacity
-                style={styles.readerMerchBtn}
+                style={styles.readerMerch}
                 onPress={() => {
-                  setReaderModalVisible(false);
+                  setReaderOpen(false);
                   if (onGoToMerch) onGoToMerch();
                 }}
-                activeOpacity={0.8}
               >
-                <Text style={styles.readerMerchBtnText}>👕 Print Merch</Text>
+                <Text style={styles.readerMerchText}>👕 Merch</Text>
               </TouchableOpacity>
             </View>
 
-            {/* Reader Book Page Display */}
-            <View style={styles.readerBookStage}>
-              {storyPages[readerPageIndex] ? (
-                <View style={styles.readerPageCard}>
-                  {/* Page Image */}
-                  <View style={styles.readerImageWrap}>
+            {/* Reader Page View */}
+            <View style={styles.readerStage}>
+              {pages[readerPage] ? (
+                <View style={styles.readerCard}>
+                  <View style={styles.readerImgWrap}>
                     <Image
                       source={
-                        storyPages[readerPageIndex].imageUri &&
-                        storyPages[readerPageIndex].imageUri.startsWith('data:')
-                          ? { uri: storyPages[readerPageIndex].imageUri }
+                        pages[readerPage].imageUri && pages[readerPage].imageUri.startsWith('data:')
+                          ? { uri: pages[readerPage].imageUri }
                           : require('../assets/cards/card_story.jpg')
                       }
-                      style={styles.readerImage}
+                      style={styles.readerImg}
                       resizeMode="cover"
                     />
-                    <View style={styles.readerPageBadge}>
-                      <Text style={styles.readerPageBadgeText}>
-                        Page {readerPageIndex + 1} of 6
-                      </Text>
+                    <View style={styles.readerPageTag}>
+                      <Text style={styles.readerPageTagText}>Page {readerPage + 1} of 6</Text>
                     </View>
                   </View>
 
-                  {/* Page Text & Audio */}
-                  <View style={styles.readerTextSection}>
-                    <Text style={styles.readerPageTitle}>
-                      {storyPages[readerPageIndex].title}
-                    </Text>
-                    <Text style={styles.readerStoryBody}>
-                      {storyPages[readerPageIndex].storyText}
-                    </Text>
+                  <View style={styles.readerTextWrap}>
+                    <Text style={styles.readerStoryLine}>"{pages[readerPage].storyText}"</Text>
 
                     <TouchableOpacity
-                      style={styles.readerListenPill}
-                      onPress={() => handleReadAloud(storyPages[readerPageIndex].storyText)}
-                      activeOpacity={0.8}
+                      style={styles.readerSpeakBtn}
+                      onPress={() => handleSpeak(pages[readerPage].storyText)}
                     >
-                      <Text style={styles.readerListenPillText}>🔊 Read Page to Me</Text>
+                      <Text style={styles.readerSpeakBtnText}>🔊 Read Page to Me</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               ) : (
-                <View style={styles.emptyReaderPage}>
-                  <Text style={styles.emptyReaderEmoji}>🎨</Text>
-                  <Text style={styles.emptyReaderTitle}>Page {readerPageIndex + 1} Not Painted Yet</Text>
-                  <Text style={styles.emptyReaderDesc}>
-                    Go back to the story studio to paint Page {readerPageIndex + 1} with {characterName}!
-                  </Text>
+                <View style={styles.readerEmpty}>
+                  <Text style={styles.readerEmptyEmoji}>🎨</Text>
+                  <Text style={styles.readerEmptyTitle}>Page {readerPage + 1} not made yet!</Text>
                 </View>
               )}
             </View>
 
             {/* Reader Navigation Footer */}
-            <View style={styles.readerFooter}>
+            <View style={styles.readerBottom}>
               <TouchableOpacity
-                style={[
-                  styles.readerNavBtn,
-                  readerPageIndex === 0 && styles.readerNavBtnDisabled,
-                ]}
-                disabled={readerPageIndex === 0}
-                onPress={() => setReaderPageIndex((p) => Math.max(0, p - 1))}
+                style={[styles.readerNavBtn, readerPage === 0 && styles.readerNavBtnDisabled]}
+                disabled={readerPage === 0}
+                onPress={() => setReaderPage((p) => Math.max(0, p - 1))}
               >
-                <Text style={styles.readerNavBtnText}>◀ Previous</Text>
+                <Text style={styles.readerNavBtnText}>◀ Prev</Text>
               </TouchableOpacity>
 
-              <View style={styles.readerPageDots}>
+              <View style={styles.readerDots}>
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <TouchableOpacity
+                  <View
                     key={i}
-                    onPress={() => setReaderPageIndex(i)}
                     style={[
-                      styles.readerDot,
-                      readerPageIndex === i && styles.readerDotActive,
-                      storyPages[i] && styles.readerDotComplete,
+                      styles.dot,
+                      readerPage === i && styles.dotActive,
+                      pages[i] && styles.dotDone,
                     ]}
                   />
                 ))}
               </View>
 
               <TouchableOpacity
-                style={[
-                  styles.readerNavBtn,
-                  readerPageIndex === 5 && styles.readerNavBtnDisabled,
-                ]}
-                disabled={readerPageIndex === 5}
-                onPress={() => setReaderPageIndex((p) => Math.min(5, p + 1))}
+                style={[styles.readerNavBtn, readerPage === 5 && styles.readerNavBtnDisabled]}
+                disabled={readerPage === 5}
+                onPress={() => setReaderPage((p) => Math.min(5, p + 1))}
               >
                 <Text style={styles.readerNavBtnText}>Next ▶</Text>
               </TouchableOpacity>
@@ -677,11 +631,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  darkBackdropOverlay: {
+  whiteOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    backgroundColor: 'rgba(255, 255, 255, 0.93)',
   },
-  subtleBackGlow: {
+  gentleGlow: {
     position: 'absolute',
     alignItems: 'center',
     justifyContent: 'center',
@@ -689,133 +643,101 @@ const styles = StyleSheet.create({
   },
 
   // TOP BAR
-  headerBar: {
+  topBar: {
     paddingTop: Platform.OS === 'ios' ? 52 : 44,
     paddingHorizontal: 16,
-    paddingBottom: 10,
+    paddingBottom: 8,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    zIndex: 30,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.92)',
+  backBtn: {
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
-  backButtonArrow: {
-    fontSize: 20,
-    color: '#0A1C3E',
-    fontWeight: '700',
-    marginRight: 4,
-    marginTop: -2,
-  },
-  backButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
+  backBtnText: {
+    fontSize: 12.5,
+    fontWeight: '800',
     color: '#0A1C3E',
   },
   titleBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(238, 242, 255, 0.95)',
+    backgroundColor: '#EFF6FF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#C7D2FE',
-    maxWidth: '46%',
-  },
-  titleBadgeEmoji: {
-    fontSize: 14,
-    marginRight: 6,
+    borderColor: '#BFDBFE',
+    maxWidth: '50%',
   },
   titleBadgeText: {
     fontSize: 13,
     fontWeight: '800',
-    color: '#3730A3',
+    color: '#1E3A8A',
   },
-  readBookHeaderBtn: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 11,
+  readHeaderBtn: {
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 18,
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 3,
+    borderRadius: 20,
   },
-  readBookHeaderText: {
+  readHeaderText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
   },
 
-  // 6-BEAT PROGRESS RAIL
-  progressRailContainer: {
-    paddingHorizontal: 14,
+  // 6 STAR STEPPERS (Super clean for kids)
+  starStepperRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     borderBottomWidth: 1,
     borderColor: '#E2E8F0',
   },
-  progressRailInner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  starStep: {
     alignItems: 'center',
-  },
-  progressGem: {
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 6,
-    borderRadius: 12,
+    justifyContent: 'center',
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#FFFFFF',
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
-    backgroundColor: '#FFFFFF',
-    minWidth: 48,
   },
-  progressGemActive: {
-    borderColor: '#3B82F6',
+  starStepCurrent: {
+    borderColor: '#2563EB',
     backgroundColor: '#EFF6FF',
-    transform: [{ scale: 1.05 }],
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-    elevation: 2,
+    transform: [{ scale: 1.08 }],
+    elevation: 3,
   },
-  progressGemCompleted: {
+  starStepDone: {
     borderColor: '#10B981',
     backgroundColor: '#ECFDF5',
   },
-  progressGemText: {
-    fontSize: 13,
+  starStepIcon: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#64748B',
+  },
+  starStepText: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: '#94A3B8',
+    marginTop: 1,
+  },
+  starStepTextCurrent: {
+    color: '#1E3A8A',
     fontWeight: '800',
-    color: '#64748B',
-  },
-  progressGemTextActive: {
-    color: '#1D4ED8',
-  },
-  progressGemLabel: {
-    fontSize: 9,
-    fontWeight: '600',
-    color: '#64748B',
-    marginTop: 2,
   },
 
-  // MAIN SCROLL
-  scrollArea: {
+  // SCROLL CONTENT
+  mainScroll: {
     flex: 1,
   },
   scrollContent: {
@@ -823,50 +745,50 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
 
-  // CO-PILOT CHARACTER DOCK
-  coPilotStage: {
+  // CUTE TALKING COMPANION
+  companionDock: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#FFFFFF',
     borderRadius: 22,
     padding: 12,
     borderWidth: 1.5,
-    borderColor: '#E0E7FF',
-    shadowColor: '#4338CA',
+    borderColor: '#DBEAFE',
+    shadowColor: '#2563EB',
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    marginBottom: 16,
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+    marginBottom: 14,
   },
-  coPilotAvatarWrap: {
-    width: 88,
-    height: 98,
+  companionAvatarWrap: {
+    width: 80,
+    height: 88,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
   },
-  coPilotAvatarImg: {
-    width: 78,
-    height: 78,
+  companionImg: {
+    width: 72,
+    height: 72,
     zIndex: 2,
   },
-  coPilotNameTag: {
+  companionPill: {
     backgroundColor: '#1E1B4B',
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     paddingVertical: 2,
     borderRadius: 10,
-    marginTop: -6,
-    zIndex: 5,
     borderWidth: 1,
     borderColor: '#FDE68A',
+    zIndex: 5,
+    marginTop: -4,
   },
-  coPilotNameTagText: {
-    fontSize: 9.5,
+  companionPillText: {
+    fontSize: 9,
     fontWeight: '800',
     color: '#FDE68A',
   },
-  speechBubbleCard: {
+  bubbleCard: {
     flex: 1,
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
@@ -875,247 +797,210 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     position: 'relative',
   },
-  speechBubbleHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  speechBubbleAuthor: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#6366F1',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  btnListen: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  btnListenText: {
-    fontSize: 10,
+  bubbleQuestion: {
+    fontSize: 14,
     fontWeight: '700',
-    color: '#4F46E5',
-  },
-  speechBubbleText: {
-    fontSize: 13,
     color: '#0F172A',
-    fontWeight: '600',
-    lineHeight: 18,
+    lineHeight: 20,
+    marginBottom: 6,
   },
-  speechBubbleTail: {
-    position: 'absolute',
-    left: -8,
-    top: 24,
-    width: 0,
-    height: 0,
-    borderTopWidth: 8,
-    borderTopColor: 'transparent',
-    borderBottomWidth: 8,
-    borderBottomColor: 'transparent',
-    borderRightWidth: 8,
-    borderRightColor: '#F8FAFC',
-  },
-
-  // CURRENT BEAT HEADER
-  beatHeaderWrap: {
-    marginBottom: 14,
-  },
-  beatBadge: {
+  listenBtn: {
     alignSelf: 'flex-start',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 10,
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 9,
     paddingVertical: 3,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#FCD34D',
-    marginBottom: 4,
   },
-  beatBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#B45309',
-    letterSpacing: 0.5,
-  },
-  beatTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: '#0A1C3E',
-    letterSpacing: -0.3,
-  },
-  beatSubtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#475569',
-    marginTop: 2,
-  },
-
-  // PAGE PREVIEW CARD
-  pagePreviewCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 18,
-    padding: 12,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  pagePreviewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  pagePreviewTitle: {
-    fontSize: 12.5,
-    fontWeight: '800',
-    color: '#0A1C3E',
-  },
-  btnListenSmall: {
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  btnListenSmallText: {
+  listenBtnText: {
     fontSize: 10.5,
     fontWeight: '700',
     color: '#4F46E5',
   },
-  pagePreviewImageWrap: {
+  bubbleArrow: {
+    position: 'absolute',
+    left: -7,
+    top: 20,
+    width: 0,
+    height: 0,
+    borderTopWidth: 7,
+    borderTopColor: 'transparent',
+    borderBottomWidth: 7,
+    borderBottomColor: 'transparent',
+    borderRightWidth: 7,
+    borderRightColor: '#F8FAFC',
+  },
+
+  // PAINTED PAGE CARD
+  paintedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 12,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  paintedImgWrap: {
     width: '100%',
-    height: 180,
-    borderRadius: 14,
+    height: 200,
+    borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: '#F1F5F9',
+    position: 'relative',
     marginBottom: 10,
   },
-  pagePreviewImage: {
+  paintedImg: {
     width: '100%',
     height: '100%',
   },
-  pagePreviewStoryText: {
-    fontSize: 13.5,
+  paintedBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(15, 23, 42, 0.85)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  paintedBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FDE68A',
+  },
+  paintedStoryText: {
+    fontSize: 15,
     fontStyle: 'italic',
     color: '#1E293B',
-    lineHeight: 19,
-    fontWeight: '500',
+    lineHeight: 22,
+    fontWeight: '600',
+    marginBottom: 10,
+  },
+  paintedBtnRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  btnSpeakText: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  btnSpeakTextLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#4338CA',
+  },
+  btnNextPage: {
+    backgroundColor: '#10B981',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  btnNextPageText: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: '#FFFFFF',
   },
 
-  // GUIDED CHOICES
+  // 4 BIG CHOICES SECTION
   choicesSection: {
-    marginBottom: 18,
+    marginBottom: 14,
   },
-  choicesSectionHeader: {
+  sectionTitle: {
     fontSize: 14,
     fontWeight: '800',
     color: '#0A1C3E',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   choiceGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  choiceCard: {
+  bigChoiceCard: {
     width: '48.5%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderWidth: 2,
     marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,
   },
-  choiceCardSelected: {
-    borderColor: '#3B82F6',
-    backgroundColor: '#EFF6FF',
-    transform: [{ scale: 1.02 }],
-    shadowColor: '#3B82F6',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 4,
+  bigChoiceCardSelected: {
+    borderColor: '#2563EB',
+    transform: [{ scale: 1.04 }],
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
-  choiceCardTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  bigChoiceIcon: {
+    fontSize: 32,
     marginBottom: 6,
   },
-  choiceCardIcon: {
-    fontSize: 24,
-  },
-  selectedCheckBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#3B82F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  selectedCheckText: {
-    color: '#FFFFFF',
-    fontSize: 11,
+  bigChoiceLabel: {
+    fontSize: 13,
     fontWeight: '800',
-  },
-  choiceCardLabel: {
-    fontSize: 12.5,
-    fontWeight: '700',
     color: '#0F172A',
-    marginBottom: 3,
+    textAlign: 'center',
   },
-  choiceCardLabelSelected: {
+  bigChoiceLabelSelected: {
     color: '#1D4ED8',
   },
-  choiceCardDesc: {
-    fontSize: 10.5,
-    color: '#64748B',
-    lineHeight: 14,
+  choiceCheckPill: {
+    marginTop: 4,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
   },
-  toggleCustomBtn: {
+  choiceCheckText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFFFFF',
+  },
+  customToggle: {
     alignSelf: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    marginTop: 2,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
   },
-  toggleCustomText: {
+  customToggleText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#4F46E5',
   },
-  customInputContainer: {
-    marginTop: 8,
+  customBox: {
+    marginTop: 6,
     backgroundColor: '#FFFFFF',
     borderRadius: 14,
     borderWidth: 1.5,
-    borderColor: '#C7D2FE',
-    padding: 10,
+    borderColor: '#BFDBFE',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
-  customTextInput: {
+  customInput: {
     fontSize: 13,
     color: '#0F172A',
-    minHeight: 50,
+    minHeight: 40,
   },
 
-  // ACTION BUTTONS
-  actionSection: {
-    marginBottom: 20,
-  },
-  paintPageBtn: {
+  // BIG ACTION BUTTON
+  bigActionBtn: {
     backgroundColor: '#2563EB',
-    paddingVertical: 14,
-    borderRadius: 20,
+    paddingVertical: 15,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#1D4ED8',
@@ -1123,60 +1008,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 8,
     elevation: 5,
+    marginBottom: 10,
   },
-  paintPageBtnDisabled: {
+  bigActionBtnDisabled: {
     backgroundColor: '#60A5FA',
   },
-  paintBtnContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  paintBtnEmoji: {
-    fontSize: 18,
-    marginRight: 8,
-  },
-  paintBtnText: {
-    fontSize: 15,
-    fontWeight: '800',
+  bigActionBtnText: {
+    fontSize: 16,
+    fontWeight: '900',
     color: '#FFFFFF',
+    letterSpacing: 0.3,
   },
-  loadingRow: {
+  btnLoadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  loadingBtnText: {
-    fontSize: 13,
+  btnLoadingText: {
+    fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',
     marginLeft: 8,
   },
-  openBookFullBtn: {
-    marginTop: 10,
+  celebrationReadBtn: {
     backgroundColor: '#10B981',
-    paddingVertical: 13,
-    borderRadius: 20,
+    paddingVertical: 14,
+    borderRadius: 22,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#059669',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 4,
   },
-  openBookFullText: {
-    fontSize: 14,
-    fontWeight: '800',
+  celebrationReadBtnText: {
+    fontSize: 15,
+    fontWeight: '900',
     color: '#FFFFFF',
   },
 
   // READER MODAL
-  readerModalContainer: {
+  readerModal: {
     flex: 1,
     backgroundColor: '#0F172A',
   },
-  readerHeader: {
+  readerTop: {
     paddingTop: Platform.OS === 'ios' ? 52 : 44,
     paddingHorizontal: 16,
-    paddingBottom: 12,
+    paddingBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -1184,131 +1063,108 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: '#334155',
   },
-  readerCloseBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  readerClose: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: '#334155',
     borderRadius: 14,
   },
-  readerCloseBtnText: {
+  readerCloseText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#F8FAFC',
   },
-  readerHeaderTitle: {
+  readerBookTitle: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#F8FAFC',
-    maxWidth: '50%',
+    color: '#FFFFFF',
+    maxWidth: '55%',
   },
-  readerMerchBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+  readerMerch: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     backgroundColor: '#F59E0B',
     borderRadius: 14,
   },
-  readerMerchBtnText: {
+  readerMerchText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#1E1B4B',
   },
-  readerBookStage: {
+  readerStage: {
     flex: 1,
     padding: 16,
     justifyContent: 'center',
   },
-  readerPageCard: {
+  readerCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 22,
+    borderRadius: 24,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
     elevation: 8,
   },
-  readerImageWrap: {
+  readerImgWrap: {
     width: '100%',
-    height: 240,
-    backgroundColor: '#000000',
+    height: 250,
+    backgroundColor: '#000',
     position: 'relative',
   },
-  readerImage: {
+  readerImg: {
     width: '100%',
     height: '100%',
   },
-  readerPageBadge: {
+  readerPageTag: {
     position: 'absolute',
-    top: 12,
-    right: 12,
+    top: 10,
+    right: 10,
     backgroundColor: 'rgba(15, 23, 42, 0.85)',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
-  readerPageBadgeText: {
+  readerPageTagText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FDE68A',
   },
-  readerTextSection: {
-    padding: 18,
+  readerTextWrap: {
+    padding: 16,
   },
-  readerPageTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#6366F1',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
-  },
-  readerStoryBody: {
+  readerStoryLine: {
     fontSize: 16,
     lineHeight: 24,
     color: '#1E293B',
     fontWeight: '600',
-    marginBottom: 14,
+    marginBottom: 12,
   },
-  readerListenPill: {
+  readerSpeakBtn: {
     alignSelf: 'flex-start',
     backgroundColor: '#EEF2FF',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#C7D2FE',
   },
-  readerListenPillText: {
+  readerSpeakBtnText: {
     fontSize: 12,
     fontWeight: '700',
     color: '#4338CA',
   },
-  emptyReaderPage: {
+  readerEmpty: {
     alignItems: 'center',
     padding: 30,
     backgroundColor: '#1E293B',
     borderRadius: 22,
   },
-  emptyReaderEmoji: {
+  readerEmptyEmoji: {
     fontSize: 48,
     marginBottom: 10,
   },
-  emptyReaderTitle: {
-    fontSize: 18,
+  readerEmptyTitle: {
+    fontSize: 16,
     fontWeight: '800',
-    color: '#F8FAFC',
-    marginBottom: 6,
+    color: '#FFFFFF',
   },
-  emptyReaderDesc: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-  readerFooter: {
-    paddingVertical: 16,
+  readerBottom: {
+    paddingVertical: 14,
     paddingHorizontal: 20,
     backgroundColor: '#1E293B',
     flexDirection: 'row',
@@ -1318,8 +1174,8 @@ const styles = StyleSheet.create({
     borderColor: '#334155',
   },
   readerNavBtn: {
-    backgroundColor: '#3B82F6',
-    paddingHorizontal: 14,
+    backgroundColor: '#2563EB',
+    paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 16,
   },
@@ -1329,24 +1185,24 @@ const styles = StyleSheet.create({
   },
   readerNavBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#FFFFFF',
   },
-  readerPageDots: {
+  readerDots: {
     flexDirection: 'row',
     gap: 6,
   },
-  readerDot: {
+  dot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#475569',
   },
-  readerDotActive: {
+  dotActive: {
+    width: 16,
     backgroundColor: '#3B82F6',
-    width: 18,
   },
-  readerDotComplete: {
+  dotDone: {
     backgroundColor: '#10B981',
   },
 });
