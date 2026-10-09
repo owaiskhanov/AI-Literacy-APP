@@ -20,6 +20,8 @@ import BrandLogo from './components/BrandLogo';
 import WelcomeBack from './components/WelcomeBack';
 import UserNameScreen from './components/UserNameScreen';
 import CharacterScreen from './components/CharacterScreen';
+import StoryAdventureScreen from './components/StoryAdventureScreen';
+import { getActiveCharacter } from './services/characterStorage';
 
 // Complete auth session if redirected back to web browser
 WebBrowser.maybeCompleteAuthSession();
@@ -61,8 +63,9 @@ function GoogleIcon() {
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
-  const [step, setStep] = useState(1); // 1 = Login, 2 = UserName, 3 = Character
+  const [step, setStep] = useState(1); // 1 = Login, 2 = UserName, 3 = Character, 4 = Story Adventure
   const [storyName, setStoryName] = useState('');
+  const [activeCharacter, setActiveCharacter] = useState(null);
   const { width, height } = useWindowDimensions();
   const [fontsLoaded] = useFonts({ Inter_500Medium, Inter_800ExtraBold });
 
@@ -125,13 +128,40 @@ export default function App() {
   const baseBottom = Platform.OS === 'ios' ? 36 : 48;
   const buttonBottom = baseBottom + height * 0.17;
 
+  // Page Four: Story Adventure & Merchandise Hub
+  if (step === 4) {
+    return (
+      <StoryAdventureScreen
+        character={activeCharacter || getActiveCharacter(userInfo, storyName)}
+        userInfo={userInfo}
+        storyName={storyName}
+        onBack={() => setStep(3)}
+        onNavigateStory={(questTitle) => {
+          Alert.alert(
+            'Story Chapter Unlocked! 📖',
+            `Embarking on "${questTitle}" with ${activeCharacter?.name || 'your companion'}!\n\nTheir visual DNA is locked for seamless story illustrations.`
+          );
+        }}
+        onNavigateMerch={() => {
+          Alert.alert(
+            'Merchandise Studio 👕',
+            `Custom stickers, apparel, and storybooks for ${activeCharacter?.name || 'your companion'} are ready!`
+          );
+        }}
+      />
+    );
+  }
+
   // Page Three: Character Generation Page
   if (step === 3) {
     return (
       <CharacterScreen
+        userInfo={userInfo}
+        storyName={storyName}
         onBack={() => setStep(2)}
-        onComplete={() => {
-          Alert.alert('Character Saved!', 'Your character is ready for the adventure! 🌟');
+        onComplete={(characterData) => {
+          setActiveCharacter(characterData);
+          setStep(4);
         }}
       />
     );

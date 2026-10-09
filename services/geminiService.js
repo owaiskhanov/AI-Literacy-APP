@@ -158,9 +158,13 @@ async function generateCharacterTextAndPrompt(userPrompt, apiKey) {
     "2. MYTHICAL TOUCH: Always make the character slightly mythical and enchanted, regardless of what was requested (even for common animals). Infuse subtle magical traits: celestial stardust, glowing mystical markings, tiny iridescent fairy/dragon wings, enchanted crystal horns, or glowing gemstone eyes.\n" +
     "3. BACKGROUND: Strict NO BACKGROUND isolated subject directly on solid pure flat white #FFFFFF background. Absolutely NO floor, NO ground shadows, NO scenery, NO borders, NO white sticker outlines or die-cut margins.\n" +
     "4. POSE & GROUNDING (ALWAYS STANDING): Mandatory full-body standing or perched pose with feet, paws, or talons planted firmly flat at the bottom base of the frame, full body completely visible from head to toe. The character must stand upright so it plants firmly on a stone pedestal. Never floating in mid-air, never flying without ground contact, never lying down, and never cropped at the waist, knees, or neck.\n" +
-    "5. DIALOGUE LENGTH: talkBubble MUST be a short, sweet 1-2 sentence spoken greeting (strictly 12 to 18 words maximum). E.g. \"The ocean breeze is calling! Adventure awaits beyond the horizon! 🌊⚓\". Never write long paragraphs.\n\n" +
+    "5. DIALOGUE LENGTH: talkBubble MUST be a short, sweet 1-2 sentence spoken greeting (strictly 12 to 18 words maximum). E.g. \"The ocean breeze is calling! Adventure awaits beyond the horizon! 🌊⚓\". Never write long paragraphs.\n" +
+    "6. VISUAL CONTINUITY & MERCHANDISE SPECIFICATIONS:\n" +
+    "- visualDescription: A vivid, concise 2-sentence visual description capturing the character's exact colors, fur/scales/feathers, wing texture, eye color, and unique magical marking. This is stored in the child's account so future story scenes and merchandise maintain 100% visual consistency!\n" +
+    "- traits: An array of 3-4 inspiring traits (e.g. [\"Brave\", \"Crystal Wings\", \"Star Magic\"]).\n" +
+    "- signatureItem: A signature magical item or accessory (e.g. \"Star Crystal Pendant\", \"Enchanted Compass\", \"Glowing Stardust Scarf\").\n\n" +
     "Output strictly valid JSON format:\n" +
-    '{"characterName": "...", "talkBubble": "...", "imagePrompt": "..."}';
+    '{"characterName": "...", "talkBubble": "...", "imagePrompt": "...", "visualDescription": "...", "traits": ["...", "..."], "signatureItem": "..."}';
 
   let lastError = null;
   for (const model of modelsToTry) {
@@ -291,6 +295,12 @@ export async function generateCharacterWithGemini(userPrompt, customApiKey = nul
 
   // 2. Generate isolated character illustration
   let imageUrl = null;
+  const traits = Array.isArray(textResult.traits) && textResult.traits.length > 0
+    ? textResult.traits
+    : ['Mythical', 'Brave', 'Kind'];
+  const visualDesc = textResult.visualDescription || textResult.imagePrompt || `A magical 3D character named ${textResult.characterName || 'friend'}.`;
+  const signatureItem = textResult.signatureItem || 'Enchanted Stardust';
+
   try {
     imageUrl = await generateCharacterImage(textResult.imagePrompt, activeKey);
   } catch (imageErr) {
@@ -301,6 +311,10 @@ export async function generateCharacterWithGemini(userPrompt, customApiKey = nul
       talkBubble: textResult.talkBubble,
       imageError: imageErr.message,
       imagePrompt: textResult.imagePrompt,
+      visualDescription: visualDesc,
+      traits: traits,
+      signatureItem: signatureItem,
+      originalPrompt: userPrompt,
     };
   }
 
@@ -310,5 +324,9 @@ export async function generateCharacterWithGemini(userPrompt, customApiKey = nul
     talkBubble: textResult.talkBubble,
     imageUrl: imageUrl,
     imagePrompt: textResult.imagePrompt,
+    visualDescription: visualDesc,
+    traits: traits,
+    signatureItem: signatureItem,
+    originalPrompt: userPrompt,
   };
 }

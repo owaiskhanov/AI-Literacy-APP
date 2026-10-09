@@ -23,6 +23,7 @@ import {
   getGeminiApiKey,
   setGeminiApiKey,
 } from '../services/geminiService';
+import { saveCharacterToAccount } from '../services/characterStorage';
 
 const SUGGESTION_TAGS = [
   { label: '✨ Mythical', keyword: 'mythical' },
@@ -87,7 +88,7 @@ function SubtleBackGlow({ size = 340 }) {
   );
 }
 
-export default function CharacterScreen({ onBack, onComplete }) {
+export default function CharacterScreen({ onBack, onComplete, userInfo, storyName }) {
   const { width, height } = useWindowDimensions();
   const [prompt, setPrompt] = useState('');
   const [loading, setLoading] = useState(false);
@@ -99,6 +100,14 @@ export default function CharacterScreen({ onBack, onComplete }) {
   const [talkBubble, setTalkBubble] = useState(
     'Add what they look like\nand what makes them\nspecial!'
   );
+  const [characterTraits, setCharacterTraits] = useState(['Mythical', 'Brave', 'Kind']);
+  const [visualDescription, setVisualDescription] = useState('');
+  const [signatureItem, setSignatureItem] = useState('Star Crystal');
+  const [lastImagePrompt, setLastImagePrompt] = useState('');
+
+  // Account Saving & Confirmation State
+  const [saveModalVisible, setSaveModalVisible] = useState(false);
+  const [savedCharacter, setSavedCharacter] = useState(null);
 
   // Gemini API Key Modal
   const [apiKeyModalVisible, setApiKeyModalVisible] = useState(false);
@@ -271,6 +280,18 @@ export default function CharacterScreen({ onBack, onComplete }) {
       if (result.characterName) {
         setCharacterName(result.characterName);
       }
+      if (result.traits && result.traits.length > 0) {
+        setCharacterTraits(result.traits);
+      }
+      if (result.visualDescription) {
+        setVisualDescription(result.visualDescription);
+      }
+      if (result.signatureItem) {
+        setSignatureItem(result.signatureItem);
+      }
+      if (result.imagePrompt) {
+        setLastImagePrompt(result.imagePrompt);
+      }
 
       if (result.imageUrl) {
         setCharacterImageUri(result.imageUrl);
@@ -291,6 +312,39 @@ export default function CharacterScreen({ onBack, onComplete }) {
         tension: 80,
         useNativeDriver: true,
       }).start();
+    }
+  };
+
+  const handleNext = () => {
+    if (!characterImageUri && !characterName) {
+      Alert.alert(
+        'Summon Your Character First ✨',
+        'Please describe and summon your magical companion in the box below before moving to the next adventure!'
+      );
+      return;
+    }
+
+    const payload = {
+      name: characterName || 'Enchanted Companion',
+      avatarUri: characterImageUri,
+      talkBubble: talkBubble,
+      visualDescription: visualDescription || lastImagePrompt || prompt,
+      imagePrompt: lastImagePrompt || prompt,
+      originalPrompt: prompt,
+      traits: characterTraits,
+      signatureItem: signatureItem,
+      storyRole: 'Hero Companion & Protagonist',
+    };
+
+    const finalized = saveCharacterToAccount(userInfo, payload, storyName);
+    setSavedCharacter(finalized);
+    setSaveModalVisible(true);
+  };
+
+  const handleConfirmNext = () => {
+    setSaveModalVisible(false);
+    if (onComplete && savedCharacter) {
+      onComplete(savedCharacter);
     }
   };
 
@@ -317,7 +371,7 @@ export default function CharacterScreen({ onBack, onComplete }) {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.keyboardContainer}
         >
-          {/* Top Bar: Back Button & API Key Settings */}
+          {/* Top Bar: Back Button, API Key Settings, and Next Button */}
           <View style={styles.topBar}>
             {onBack ? (
               <TouchableOpacity style={styles.iconButton} onPress={onBack} activeOpacity={0.7}>
@@ -342,6 +396,29 @@ export default function CharacterScreen({ onBack, onComplete }) {
               <Text style={styles.apiKeyPillText}>
                 {hasApiKey ? '✨ Gemini Connected' : '🔑 Set Gemini Key'}
               </Text>
+            </TouchableOpacity>
+
+            {/* Next Button in Header */}
+            <TouchableOpacity
+              style={[
+                styles.nextButtonPill,
+                characterImageUri ? styles.nextButtonPillActive : styles.nextButtonPillMuted,
+              ]}
+              onPress={handleNext}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.nextButtonText, characterImageUri ? styles.nextButtonTextActive : null]}>
+                Next
+              </Text>
+              <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M5 12h14M12 5l7 7-7 7"
+                  stroke={characterImageUri ? '#0A1C3E' : '#71829B'}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </Svg>
             </TouchableOpacity>
           </View>
 
@@ -450,6 +527,20 @@ export default function CharacterScreen({ onBack, onComplete }) {
 
           {/* Bottom AI Input Section with Suggestion Tags */}
           <Animated.View style={[styles.inputSection, { opacity: fadeAnim }]}>
+            {/* Quick Finalize & Save Call-to-Action when Character is Present */}
+            {characterImageUri ? (
+              <TouchableOpacity
+                style={styles.floatingKeepButton}
+                onPress={handleNext}
+                activeOpacity={0.85}
+              >
+                <DualSparkles color="#FFFFFF" secondaryColor="#FDE68A" />
+                <Text style={styles.floatingKeepButtonText}>
+                  Keep {characterName || 'My Character'} & Next ➜
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+
             {/* Quick Suggestion Tags */}
             <ScrollView
               horizontal
@@ -547,6 +638,86 @@ export default function CharacterScreen({ onBack, onComplete }) {
                   activeOpacity={0.7}
                 >
                   <Text style={styles.modalCloseButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          {/* Celebratory Account Saved Modal */}
+          <Modal
+            visible={saveModalVisible}
+            transparent
+            animationType="fade"
+            onRequestClose={() => setSaveModalVisible(false)}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.savedCard}>
+                <View style={styles.savedHeaderBadge}>
+                  <Text style={{ fontSize: 30 }}>✨</Text>
+                </View>
+
+                <Text style={styles.savedTitle}>Character Saved!</Text>
+                <Text style={styles.savedSubtitle}>
+                  {savedCharacter?.name || 'Your character'} is now saved in{' '}
+                  <Text style={{ fontWeight: '700', color: '#1B2A4A' }}>
+                    {userInfo?.name || storyName || 'your account'}
+                  </Text>
+                  's profile!
+                </Text>
+
+                {/* Character Snapshot Card */}
+                <View style={styles.savedPreviewBox}>
+                  {characterImageUri ? (
+                    <Image
+                      source={{ uri: characterImageUri }}
+                      style={styles.savedPreviewThumb}
+                    />
+                  ) : null}
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.savedCharName}>{savedCharacter?.name || 'Magical Friend'}</Text>
+                    <Text style={styles.savedSignatureItem}>
+                      ✨ Item: {savedCharacter?.signatureItem || 'Star Crystal'}
+                    </Text>
+                    <View style={styles.savedTraitsRow}>
+                      {(savedCharacter?.traits || []).slice(0, 3).map((t, idx) => (
+                        <View key={idx} style={styles.savedTraitPill}>
+                          <Text style={styles.savedTraitText}>{t}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+
+                {/* Capabilities unlocked for child */}
+                <View style={styles.capabilitiesList}>
+                  <View style={styles.capabilityRow}>
+                    <Text style={styles.capabilityIcon}>📖</Text>
+                    <Text style={styles.capabilityText}>
+                      <Text style={{ fontWeight: '700', color: '#0A1C3E' }}>Story Consistency:</Text> Visual blueprint saved so {savedCharacter?.name || 'they'} look identical in all story chapters!
+                    </Text>
+                  </View>
+                  <View style={styles.capabilityRow}>
+                    <Text style={styles.capabilityIcon}>👕</Text>
+                    <Text style={styles.capabilityText}>
+                      <Text style={{ fontWeight: '700', color: '#0A1C3E' }}>Merchandise Studio:</Text> High-res transparent cutout ready for stickers, t-shirts & book covers!
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.continueButton}
+                  onPress={handleConfirmNext}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.continueButtonText}>Continue to Screen 4 🚀</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.keepCustomizingButton}
+                  onPress={() => setSaveModalVisible(false)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.keepCustomizingText}>Keep Customizing</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -932,5 +1103,202 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     zIndex: 5,
     transform: [{ scaleY: 0.65 }],
+  },
+  nextButtonPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#D7C3AA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  nextButtonPillActive: {
+    backgroundColor: '#FDE68A',
+    borderColor: '#F59E0B',
+    shadowColor: '#F59E0B',
+    shadowOpacity: 0.35,
+  },
+  nextButtonPillMuted: {
+    backgroundColor: 'rgba(255, 255, 255, 0.75)',
+    borderColor: 'rgba(215, 195, 170, 0.5)',
+  },
+  nextButtonText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: '#71829B',
+  },
+  nextButtonTextActive: {
+    color: '#0A1C3E',
+  },
+  floatingKeepButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    alignSelf: 'center',
+    marginBottom: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 9,
+    borderRadius: 22,
+    backgroundColor: '#1E3A8A',
+    borderWidth: 1.5,
+    borderColor: '#93C5FD',
+    shadowColor: '#1E3A8A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  floatingKeepButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  savedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 26,
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+    width: '100%',
+    maxWidth: 350,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.25,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  savedHeaderBadge: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#EFF6FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: '#BFDBFE',
+  },
+  savedTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0A1C3E',
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  savedSubtitle: {
+    fontSize: 12.5,
+    color: '#556882',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  savedPreviewBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 16,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    marginBottom: 14,
+  },
+  savedPreviewThumb: {
+    width: 64,
+    height: 64,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    resizeMode: 'contain',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  savedCharName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 2,
+  },
+  savedSignatureItem: {
+    fontSize: 11.5,
+    color: '#2563EB',
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  savedTraitsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+  },
+  savedTraitPill: {
+    backgroundColor: '#E0E7FF',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  savedTraitText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#3730A3',
+  },
+  capabilitiesList: {
+    width: '100%',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    marginBottom: 16,
+    gap: 8,
+  },
+  capabilityRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  capabilityIcon: {
+    fontSize: 16,
+  },
+  capabilityText: {
+    flex: 1,
+    fontSize: 11.5,
+    color: '#166534',
+    lineHeight: 16,
+  },
+  continueButton: {
+    width: '100%',
+    backgroundColor: '#2563EB',
+    borderRadius: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 8,
+    shadowColor: '#2563EB',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.2,
+  },
+  keepCustomizingButton: {
+    paddingVertical: 6,
+  },
+  keepCustomizingText: {
+    color: '#64748B',
+    fontSize: 12.5,
+    fontWeight: '600',
   },
 });
