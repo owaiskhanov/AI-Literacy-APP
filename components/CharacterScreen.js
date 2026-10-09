@@ -17,7 +17,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path, Defs, RadialGradient, Stop, Rect } from 'react-native-svg';
 import {
   generateCharacterWithGemini,
   getGeminiApiKey,
@@ -26,10 +26,11 @@ import {
 
 const SUGGESTION_TAGS = [
   { label: '✨ Mythical', keyword: 'mythical' },
+  { label: '🪽 Divine', keyword: 'divine angelic' },
+  { label: '🌟 Celestial', keyword: 'celestial' },
   { label: '🌑 Dark', keyword: 'dark' },
   { label: '💎 Obsidian', keyword: 'obsidian' },
-  { label: '🌟 Celestial', keyword: 'celestial' },
-  { label: '🪽 Crystal Wings', keyword: 'crystal wings' },
+  { label: '🕊️ Crystal Wings', keyword: 'crystal wings' },
   { label: '🐾 Moon Spirit', keyword: 'moon spirit' },
 ];
 
@@ -64,6 +65,24 @@ function DualSparkles({ color = '#4A90E2', secondaryColor = '#DE9E36' }) {
           />
         </Svg>
       </View>
+    </View>
+  );
+}
+
+function SubtleBackGlow({ size = 340 }) {
+  return (
+    <View style={[styles.subtleBackGlow, { width: size, height: size }]}>
+      <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <Defs>
+          <RadialGradient id="backGlowGrad" cx="50%" cy="50%" rx="50%" ry="50%">
+            <Stop offset="0%" stopColor="#FFF8DC" stopOpacity="0.30" />
+            <Stop offset="30%" stopColor="#FDE68A" stopOpacity="0.16" />
+            <Stop offset="62%" stopColor="#93C5FD" stopOpacity="0.05" />
+            <Stop offset="100%" stopColor="#000000" stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Rect x="0" y="0" width={size} height={size} fill="url(#backGlowGrad)" />
+      </Svg>
     </View>
   );
 }
@@ -388,8 +407,8 @@ export default function CharacterScreen({ onBack, onComplete }) {
             {/* Character Render: Dynamic AI Generated or Inviting Magic Summoning Aura */}
             {characterImageUri ? (
               <View style={styles.characterContainer}>
-                {/* Luminous Soft Backlight Aura (Separates character from background) */}
-                <View style={styles.characterBackdropAura} />
+                {/* Subtle Soft Backlight Glow (Separates character gracefully with zero harsh white halo) */}
+                <SubtleBackGlow size={characterSize} />
 
                 {/* 3D Character Cutout Image */}
                 <Image
@@ -886,18 +905,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  characterBackdropAura: {
+  subtleBackGlow: {
     position: 'absolute',
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(255, 255, 255, 0.58)',
-    shadowColor: '#FFF8DC',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 36,
-    elevation: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     zIndex: -1,
+    pointerEvents: 'none',
   },
   characterImage: {
     resizeMode: 'contain',

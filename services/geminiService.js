@@ -48,7 +48,9 @@ function removeWhiteBackground(rgbaData, width, height) {
     const r = data[idx];
     const g = data[idx + 1];
     const b = data[idx + 2];
-    return r > 224 && g > 224 && b > 224;
+    const avg = (r + g + b) / 3;
+    const diff = Math.max(r, g, b) - Math.min(r, g, b);
+    return avg > 218 && diff < 28;
   }
 
   // Push border pixels to flood queue
@@ -103,7 +105,7 @@ function removeWhiteBackground(rgbaData, width, height) {
     }
   }
 
-  // Alpha assignment and soft anti-aliased edge feathering
+  // Alpha assignment and soft anti-aliased edge feathering with de-fringing
   for (let i = 0; i < totalPixels; i++) {
     const idx = i * 4;
     if (isBg[i] === 1) {
@@ -122,9 +124,14 @@ function removeWhiteBackground(rgbaData, width, height) {
         const g = data[idx + 1];
         const b = data[idx + 2];
         const avg = (r + g + b) / 3;
-        if (avg > 185) {
-          const factor = Math.max(0, Math.min(1, (255 - avg) / 70));
+        if (avg > 180) {
+          const factor = Math.max(0, Math.min(1, (255 - avg) / 75));
           data[idx + 3] = Math.round(factor * 255);
+          // De-fringe: suppress bright white edge halo on dark backgrounds
+          const tint = Math.max(0.65, factor);
+          data[idx] = Math.round(r * tint);
+          data[idx + 1] = Math.round(g * tint);
+          data[idx + 2] = Math.round(b * tint);
         }
       }
     }
