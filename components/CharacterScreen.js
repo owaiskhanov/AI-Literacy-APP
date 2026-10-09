@@ -302,8 +302,8 @@ export default function CharacterScreen({ onBack, onComplete }) {
   });
 
   const titleFontSize = Math.min(width * 0.076, 29);
-  const characterSize = Math.min(width * 0.96, 400);
-  const characterBottom = height * 0.19 - 5;
+  const characterSize = Math.min(width * 1.05, 440);
+  const characterBottom = height * 0.19 - 8;
 
   return (
     <View style={styles.container}>
@@ -921,11 +921,11 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
   },
   groundShadow: {
-    width: 250,
-    height: 20,
-    borderRadius: 10,
+    width: 275,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: 'rgba(10, 28, 62, 0.5)',
-    marginTop: -16,
+    marginTop: -18,
     shadowColor: '#0A1C3E',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.6,
