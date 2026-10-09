@@ -9,6 +9,7 @@ import {
   Image,
   Platform,
   Modal,
+  Alert,
   useWindowDimensions,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -127,9 +128,19 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
     default: 'serif',
   });
 
-  const topSectionHeight = Math.max(height * 0.30, 220);
-  const characterSize = Math.min(width * 0.34, 140);
-  const cardWidth = (width - 48 - 14) / 2;
+  const topSectionHeight = Math.max(height * 0.28, 220);
+  const characterSize = Math.min(width * 0.32, 125);
+  const cardWidth = (width - 32 - 12) / 2;
+
+  const handleStartProject = () => {
+    if (selectedProject) {
+      Alert.alert(
+        'Studio Ready! 🚀',
+        `Launching ${selectedProject.title} starring ${characterName}!`,
+        [{ text: 'Great!', onPress: () => setSelectedProject(null) }]
+      );
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -141,48 +152,66 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
       >
         {/* TOP 30% SECTION: Castle & Sky + Saved Character on Right */}
         <View style={[styles.topSection, { height: topSectionHeight }]}>
-          {/* Top Navigation Bar */}
+          {/* Top Navigation Row: Back Button & Child Realm grouped on the LEFT */}
           <View style={styles.topNavRow}>
-            {onBack ? (
-              <TouchableOpacity style={styles.iconButton} onPress={onBack} activeOpacity={0.75}>
-                <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M15 18l-6-6 6-6"
-                    stroke="#FFFFFF"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-              </TouchableOpacity>
-            ) : <View style={{ width: 38 }} />}
+            <View style={styles.navLeftGroup}>
+              {onBack ? (
+                <TouchableOpacity style={styles.iconButton} onPress={onBack} activeOpacity={0.75}>
+                  <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M15 18l-6-6 6-6"
+                      stroke="#FFFFFF"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </TouchableOpacity>
+              ) : null}
 
-            {/* Child Realm Pill */}
-            <View style={styles.ownerBadge}>
-              <Text style={styles.ownerBadgeText}>🏰 {ownerName}'s Kingdom</Text>
+              {/* Child Realm Pill (Safely on Left, 0 overlap with Character) */}
+              <View style={styles.ownerBadge}>
+                <Text style={styles.ownerBadgeText} numberOfLines={1}>
+                  🏰 {ownerName}'s Kingdom
+                </Text>
+              </View>
             </View>
           </View>
 
-          {/* Left Title & Subtitle */}
+          {/* Left Title, Subtitle & Signature Item */}
           <View style={styles.topLeftContent}>
             <Text
               style={[
                 styles.realmTitle,
                 {
                   fontFamily: serifFont,
-                  fontSize: Math.min(width * 0.068, 26),
+                  fontSize: Math.min(width * 0.072, 27),
                 },
               ]}
             >
-              {'Choose Your\nProject'}
+              {'Choose Your\nAdventure'}
             </Text>
             <Text style={styles.realmSubtitle} numberOfLines={2}>
-              Bring <Text style={styles.characterHighlight}>{characterName}</Text> to life in stories, apps & merch!
+              What will you create with{' '}
+              <Text style={styles.characterHighlight}>{characterName}</Text>?
             </Text>
+            <View style={styles.signatureBadgeRow}>
+              <View style={styles.signatureBadge}>
+                <Text style={styles.signatureBadgeText}>✨ Item: {signatureItem}</Text>
+              </View>
+            </View>
           </View>
 
-          {/* Right Side: Saved Character Cutout with Subtle Glow & Greeting */}
+          {/* Right Side: Saved Character Cutout in Dedicated Sky Dock */}
           <View style={styles.topRightCharacter}>
+            {/* Speech Bubble to the LEFT of Character Head (Never overlaps badge or face) */}
+            <View style={styles.characterBubble}>
+              <Text style={styles.characterBubbleText} numberOfLines={1}>
+                ✨ Ready!
+              </Text>
+              <View style={styles.characterBubbleTail} />
+            </View>
+
             <View style={[styles.characterWrapper, { width: characterSize, height: characterSize }]}>
               <SubtleBackGlow size={characterSize + 30} />
               {characterImageUri ? (
@@ -201,35 +230,18 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
                 />
               )}
 
-              {/* Character Speech / Badge */}
-              <View style={styles.characterBubble}>
-                <Text style={styles.characterBubbleText} numberOfLines={1}>
-                  ✨ Ready!
-                </Text>
-              </View>
-
-              {/* Name Tag Pill */}
+              {/* Name Tag Pill Cleanly Beneath Character Feet */}
               <View style={styles.characterNamePill}>
                 <Text style={styles.characterNamePillText} numberOfLines={1}>
-                  {characterName}
+                  🐾 {characterName}
                 </Text>
               </View>
             </View>
           </View>
         </View>
 
-        {/* BOTTOM 70% SECTION: 4 Project Cards on Warm Canvas */}
+        {/* BOTTOM 70% SECTION: 4 Rich Project Cards on Warm Canvas */}
         <View style={styles.bottomSection}>
-          <View style={styles.sectionHeaderRow}>
-            <View>
-              <Text style={styles.sectionHeaderTitle}>Creative Studios</Text>
-              <Text style={styles.sectionHeaderSubtitle}>Select a project to begin with {characterName}</Text>
-            </View>
-            <View style={styles.itemTag}>
-              <Text style={styles.itemTagText}>✨ {signatureItem}</Text>
-            </View>
-          </View>
-
           <ScrollView
             contentContainerStyle={styles.scrollCardsContainer}
             showsVerticalScrollIndicator={false}
@@ -242,7 +254,7 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
                   onPress={() => setSelectedProject(project)}
                   activeOpacity={0.88}
                 >
-                  {/* Card Thumbnail Image */}
+                  {/* Card Thumbnail Image (150px height for rich visual immersion) */}
                   <View style={styles.cardImageContainer}>
                     <Image source={project.image} style={styles.cardImage} resizeMode="cover" />
                     {/* Badge Pill */}
@@ -265,8 +277,8 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
                       {project.description}
                     </Text>
 
-                    {/* Bottom Action Pill */}
-                    <View style={styles.cardActionRow}>
+                    {/* Bottom Action Pill Button */}
+                    <View style={[styles.cardActionPill, { backgroundColor: project.tagBg, borderColor: project.tagColor }]}>
                       <Text style={[styles.cardActionText, { color: project.tagColor }]}>
                         {project.actionLabel}
                       </Text>
@@ -274,6 +286,13 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
                   </View>
                 </TouchableOpacity>
               ))}
+            </View>
+
+            {/* Bottom Storybook Reassurance Banner */}
+            <View style={styles.footerBanner}>
+              <Text style={styles.footerBannerText}>
+                ✨ All 4 studios keep <Text style={styles.footerHighlight}>{characterName}</Text>'s exact style & magic item!
+              </Text>
             </View>
           </ScrollView>
         </View>
@@ -310,7 +329,7 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
 
                   <TouchableOpacity
                     style={styles.modalStartButton}
-                    onPress={() => setSelectedProject(null)}
+                    onPress={handleStartProject}
                     activeOpacity={0.85}
                   >
                     <Text style={styles.modalStartButtonText}>
@@ -323,7 +342,7 @@ export default function ProjectsScreen({ onBack, userInfo, storyName, activeChar
                     onPress={() => setSelectedProject(null)}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.modalCloseButtonText}>Back to Projects</Text>
+                    <Text style={styles.modalCloseButtonText}>Back to Studios</Text>
                   </TouchableOpacity>
                 </>
               ) : null}
@@ -349,21 +368,26 @@ const styles = StyleSheet.create({
   // Top 30% Section
   topSection: {
     paddingTop: 48,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     justifyContent: 'space-between',
     position: 'relative',
   },
   topNavRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     zIndex: 20,
+  },
+  navLeftGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   iconButton: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: 'rgba(10, 28, 62, 0.45)',
+    backgroundColor: 'rgba(10, 28, 62, 0.55)',
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -372,16 +396,17 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   ownerBadge: {
-    paddingHorizontal: 13,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    borderWidth: 1,
-    borderColor: 'rgba(215, 195, 170, 0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 5.5,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(215, 195, 170, 0.8)',
     shadowColor: '#0A1C3E',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 5,
+    elevation: 2,
   },
   ownerBadgeText: {
     fontSize: 12,
@@ -389,8 +414,8 @@ const styles = StyleSheet.create({
     color: '#0A1C3E',
   },
   topLeftContent: {
-    maxWidth: '58%',
-    marginBottom: 8,
+    maxWidth: '56%',
+    marginBottom: 10,
     zIndex: 15,
   },
   realmTitle: {
@@ -398,26 +423,48 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 31,
     letterSpacing: -0.3,
-    textShadowColor: 'rgba(255, 255, 255, 0.8)',
+    textShadowColor: 'rgba(255, 255, 255, 0.9)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
   realmSubtitle: {
-    fontSize: 11.5,
+    fontSize: 12,
     color: '#334155',
     marginTop: 4,
-    lineHeight: 16,
+    lineHeight: 16.5,
     fontWeight: '500',
   },
   characterHighlight: {
     fontWeight: '700',
     color: '#1E3A8A',
   },
+  signatureBadgeRow: {
+    marginTop: 6,
+  },
+  signatureBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 10,
+    paddingVertical: 3.5,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    shadowColor: '#0A1C3E',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    elevation: 1,
+  },
+  signatureBadgeText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
   // Top Right Saved Character
   topRightCharacter: {
     position: 'absolute',
     right: 14,
-    top: 52,
+    top: 48,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 18,
@@ -436,102 +483,91 @@ const styles = StyleSheet.create({
   },
   characterBubble: {
     position: 'absolute',
-    top: -6,
-    left: -12,
+    top: 10,
+    left: -66,
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 1.2,
     borderColor: '#FDE68A',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.12,
     shadowRadius: 4,
-    zIndex: 10,
+    elevation: 3,
+    zIndex: 25,
   },
   characterBubbleText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
     color: '#B45309',
+  },
+  characterBubbleTail: {
+    position: 'absolute',
+    right: -5,
+    top: 7,
+    width: 0,
+    height: 0,
+    borderTopWidth: 4,
+    borderBottomWidth: 4,
+    borderLeftWidth: 6,
+    borderTopColor: 'transparent',
+    borderBottomColor: 'transparent',
+    borderLeftColor: '#FFFFFF',
   },
   characterNamePill: {
     position: 'absolute',
     bottom: -8,
-    backgroundColor: 'rgba(10, 28, 62, 0.85)',
-    paddingHorizontal: 9,
-    paddingVertical: 2.5,
+    backgroundColor: 'rgba(10, 28, 62, 0.92)',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
     borderRadius: 12,
     zIndex: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   characterNamePillText: {
-    fontSize: 10,
+    fontSize: 10.5,
     fontWeight: '700',
     color: '#FDE68A',
   },
   // Bottom 70% Section
   bottomSection: {
     flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  sectionHeaderTitle: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: '#0A1C3E',
-    letterSpacing: -0.2,
-  },
-  sectionHeaderSubtitle: {
-    fontSize: 11,
-    color: '#64748B',
-    marginTop: 1,
-  },
-  itemTag: {
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
-    paddingHorizontal: 9,
-    paddingVertical: 3.5,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-  },
-  itemTagText: {
-    fontSize: 10.5,
-    fontWeight: '600',
-    color: '#2563EB',
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
   scrollCardsContainer: {
-    paddingBottom: 36,
+    paddingBottom: 40,
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    gap: 14,
+    gap: 12,
   },
   // Project Cards
   projectCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
     borderRadius: 22,
     borderWidth: 1.5,
     borderColor: 'rgba(215, 195, 170, 0.75)',
     overflow: 'hidden',
     shadowColor: '#0A1C3E',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.09,
     shadowRadius: 10,
     elevation: 3,
   },
   cardImageContainer: {
     width: '100%',
-    height: 120,
+    height: 148,
     position: 'relative',
     backgroundColor: '#F1F5F9',
   },
@@ -543,9 +579,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    paddingHorizontal: 7,
-    paddingVertical: 2.5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   cardBadgeText: {
     fontSize: 9.5,
@@ -559,26 +600,57 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.3,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 14.5,
     fontWeight: '800',
     color: '#0A1C3E',
-    marginBottom: 4,
+    marginBottom: 3,
+    lineHeight: 18,
   },
   cardDescription: {
-    fontSize: 10.5,
-    color: '#64748B',
-    lineHeight: 14,
+    fontSize: 11,
+    color: '#475569',
+    lineHeight: 15,
     marginBottom: 8,
   },
-  cardActionRow: {
-    marginTop: 2,
+  cardActionPill: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
   cardActionText: {
     fontSize: 11,
     fontWeight: '700',
+  },
+  footerBanner: {
+    marginTop: 16,
+    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderRadius: 16,
+    borderWidth: 1.2,
+    borderColor: 'rgba(215, 195, 170, 0.7)',
+    alignItems: 'center',
+    shadowColor: '#0A1C3E',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  footerBannerText: {
+    fontSize: 11.5,
+    color: '#475569',
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  footerHighlight: {
+    fontWeight: '700',
+    color: '#0A1C3E',
   },
   // Modal Styles
   modalOverlay: {

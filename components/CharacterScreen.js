@@ -279,7 +279,9 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
         setTalkBubble(result.talkBubble);
       }
       if (result.characterName) {
-        setCharacterName(result.characterName);
+        if (!characterName.trim()) {
+          setCharacterName(result.characterName);
+        }
       }
       if (result.traits && result.traits.length > 0) {
         setCharacterTraits(result.traits);
@@ -318,7 +320,7 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
 
   const handleNext = () => {
     let finalAvatar = characterImageUri;
-    let finalName = characterName;
+    let finalName = (characterName || '').trim();
     let finalTalk = talkBubble;
     let finalTraits = characterTraits;
     let finalItem = signatureItem;
@@ -327,7 +329,7 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
     // If character not summoned yet, fallback gracefully to default enchanted companion
     if (!finalAvatar) {
       finalAvatar = Image.resolveAssetSource(require('../assets/characters/fox.png'))?.uri || 'fox.png';
-      finalName = 'Brave Kitsune';
+      if (!finalName) finalName = 'Brave Kitsune';
       finalTalk = 'The ocean breeze is calling! Adventure awaits beyond the horizon! 🌊⚓';
       finalTraits = ['Mythical', 'Brave', 'Kind'];
       finalItem = 'Star Crystal';
@@ -559,6 +561,33 @@ export default function CharacterScreen({ onBack, onComplete, userInfo, storyNam
                 </Text>
               </TouchableOpacity>
             ) : null}
+
+            {/* Character Name Input Bar (Kids can name or customize their companion!) */}
+            <View style={styles.nameInputCard}>
+              <View style={styles.nameInputBadge}>
+                <Text style={styles.nameInputBadgeText}>🏷️ Name</Text>
+              </View>
+              <TextInput
+                style={styles.nameTextInput}
+                placeholder="Name your character (e.g. Luna, Pip)..."
+                placeholderTextColor="#8C9CAE"
+                value={characterName}
+                onChangeText={setCharacterName}
+                maxLength={30}
+                returnKeyType="done"
+                editable={!loading}
+              />
+              {characterName ? (
+                <TouchableOpacity
+                  onPress={() => setCharacterName('')}
+                  style={styles.clearNameBtn}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.clearNameText}>✕</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
 
             {/* Quick Suggestion Tags */}
             <ScrollView
@@ -926,6 +955,54 @@ const styles = StyleSheet.create({
     left: 18,
     right: 18,
     zIndex: 30,
+  },
+  nameInputCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 254, 250, 0.95)',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 8,
+    borderWidth: 1.5,
+    borderColor: 'rgba(215, 195, 170, 0.6)',
+    shadowColor: '#1B2A4A',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  nameInputBadge: {
+    backgroundColor: '#EFF6FF',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  nameInputBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#2563EB',
+  },
+  nameTextInput: {
+    flex: 1,
+    fontSize: 13.5,
+    fontWeight: '600',
+    color: INK,
+    paddingVertical: 2,
+  },
+  clearNameBtn: {
+    padding: 4,
+    borderRadius: 12,
+    backgroundColor: 'rgba(203, 213, 225, 0.5)',
+    marginLeft: 6,
+  },
+  clearNameText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#64748B',
   },
   suggestionScrollView: {
     marginBottom: 8,
